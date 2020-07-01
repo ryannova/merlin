@@ -52,7 +52,7 @@ from merlin.log_formatter import FORMATS
 from merlin.router import route_for_task
 
 
-from dill import dill
+import dill
 from kombu.serialization import pickle_loads, pickle_protocol, registry
 from kombu.utils.encoding import str_to_bytes
 
@@ -71,9 +71,6 @@ def register_dill():
         content_type='application/x-python-serialize',
         content_encoding='binary'
     )
-
-
-register_dill()
 
 
 LOG = logging.getLogger(__name__)
@@ -108,6 +105,7 @@ app = Celery(
 )
 
 
+register_dill()
 app.conf.update(
     task_serializer="dill", accept_content=["dill"], result_serializer="dill"
 )

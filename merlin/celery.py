@@ -52,6 +52,30 @@ from merlin.log_formatter import FORMATS
 from merlin.router import route_for_task
 
 
+from dill import dill
+from kombu.serialization import pickle_loads, pickle_protocol, registry
+from kombu.utils.encoding import str_to_bytes
+
+
+def register_dill():
+    def encode(obj, dumper=dill.dumps):
+        return dumper(obj, protocol=pickle_protocol)
+
+    def decode(s):
+        return pickle_loads(str_to_bytes(s), load=dill.load)
+
+    registry.register(
+        name='dill',
+        encoder=encode,
+        decoder=decode,
+        content_type='application/x-python-serialize',
+        content_encoding='binary'
+    )
+
+
+register_dill()
+
+
 LOG = logging.getLogger(__name__)
 
 merlin.common.security.encrypt_backend_traffic.set_backend_funcs()
@@ -85,7 +109,7 @@ app = Celery(
 
 
 app.conf.update(
-    task_serializer="pickle", accept_content=["pickle"], result_serializer="pickle"
+    task_serializer="dill", accept_content=["dill"], result_serializer="dill"
 )
 
 app.autodiscover_tasks(["merlin.common"])

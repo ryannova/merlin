@@ -5,7 +5,7 @@ import logging
 import networkx as nx
 
 
-logger = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 class DAG(nx.DiGraph):
@@ -16,10 +16,10 @@ class DAG(nx.DiGraph):
     def add_node(self, name, obj):
         logging.debug(f"Adding {name}...")
         if name in self.nodes:
-            logger.warning(f"Node {name} already exists. Returning.")
+            LOG.warning(f"Node {name} already exists. Returning.")
             return
 
-        logger.debug(f"Node {name} added. Value is of type {type(obj)}.")
+        LOG.debug(f"Node {name} added. Value is of type {type(obj)}.")
         super().add_node(name)
         self.values[name] = obj
 
@@ -27,25 +27,18 @@ class DAG(nx.DiGraph):
         # Disallow loops to the same node.
         if src == dest:
             msg = "Cannot add self-referring cycle edge ({}, {})".format(src, dest)
-            logger.error(msg)
+            LOG.error(msg)
             return
 
         # Disallow adding edges to the graph before nodes are added.
-        error = (
-            "Attempted to create edge ({src}, {dest}), but node {node}"
-            " does not exist."
-        )
         if src not in self.nodes:
-            error = error.format(src=src, dest=dest, node=src)
-            logger.error(error)
-            raise ValueError(error)
+            raise ValueError(f"Attempted to create edge ({src}, {dest}), but node {src} does not exist.")
 
         if dest not in self.nodes:
-            logger.error(error, src, dest, dest)
-            return
+            raise ValueError(f"Attempted to create edge ({src}, {dest}), but node {dest} does not exist.")
 
         if (src, dest) in self.edges:
-            logger.debug("Edge (%s, %s) already in DAG. Returning.", src, dest)
+            LOG.debug("Edge (%s, %s) already in DAG. Returning.", src, dest)
             return
 
         # If dest is not already and edge from src, add it.
@@ -55,24 +48,24 @@ class DAG(nx.DiGraph):
         # Check to make sure we've not created a cycle.
         if self.detect_cycle():
             msg = f"Adding edge ({src}, {dest}) creates a cycle."
-            logger.error(msg)
+            LOG.error(msg)
             raise Exception(msg)
 
     def remove_edge(self, src, dest):
         if src not in self.nodes:
-            logger.warning(
+            LOG.warning(
                 f"Attempted to remove an edge ({src}, {dest}), but {src} does not exist."
             )
             return
 
         if dest not in self.nodes:
-            logger.warning(
+            LOG.warning(
                 f"Attempted to remove an edge from ({src}, {dest}), but {dest} does not exist."
             )
             return
 
         if (src, dest) not in self.edges:
-            logger.warning(
+            LOG.warning(
                 f"Attempted to remove edge ({src}, {dest}), which does not exist."
             )
 
@@ -80,9 +73,18 @@ class DAG(nx.DiGraph):
         logging.debug(f"Removed edge ({src}, {dest}).")
 
     def get_adjacency_matrix(self):
-        sparse_matrix = nx.linalg.graphmatrix.adjacency_matrix(self)
-        result = sparse_matrix.todok()
-        return dict(result)
+        #sparse_matrix = nx.linalg.graphmatrix.adjacency_matrix(self)
+        result = nx.convert.to_dict_of_dicts(self)
+        ##print("***Adjacency matrix:")
+        ##print(result)
+        ## TODO convert back to names
+        ##result = sparse_matrix.todok()
+        #result = dict(result)
+        #result_final = {}
+        #for k,v in sparse_matrix.items():
+        #    result_final[k] = [v]
+        #print(result_final)
+        return result
 
     def dfs_subtree(self, src, par=None):
         return nx.dfs_tree(self, src)

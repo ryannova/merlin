@@ -87,13 +87,16 @@ class Step:
         """
         get the run command text body"
         """
-        return self.mstep.step.__dict__["run"]["cmd"]
+        print(self.mstep)
+        return self.mstep["run"]["cmd"]
 
     def get_restart_cmd(self):
         """
-        get the restart command text body, else return None"
+        get the restart command text body, else return None
         """
-        return self.mstep.step.__dict__["run"]["restart"]
+        if "restart" in self.mstep["run"]:
+            return self.mstep["run"]["restart"]
+        return None
 
     def clone_changing_workspace_and_cmd(
         self, new_cmd=None, cmd_replacement_pairs=None, new_workspace=None
@@ -108,7 +111,7 @@ class Step:
         :param new_workspace : (Optional) the workspace for the new step.
         """
         LOG.debug(f"clone called with new_workspace {new_workspace}")
-        step_dict = deepcopy(self.mstep.step.__dict__)
+        step_dict = deepcopy(self.mstep)
 
         if new_cmd is not None:
             step_dict["run"]["cmd"] = new_cmd
@@ -118,7 +121,7 @@ class Step:
                 cmd = step_dict["run"]["cmd"]
                 step_dict["run"]["cmd"] = re.sub(re.escape(str1), str2, cmd, flags=re.I)
 
-                restart_cmd = step_dict["run"]["restart"]
+                restart_cmd = self.get_restart_cmd()
                 if restart_cmd:
                     step_dict["run"]["restart"] = re.sub(
                         re.escape(str1), str2, restart_cmd, flags=re.I
@@ -135,7 +138,7 @@ class Step:
 
     def get_task_queue(self):
         """ Retrieve the task queue for the Step."""
-        return self.get_task_queue_from_dict(self.mstep.step.__dict__)
+        return self.get_task_queue_from_dict(self.mstep)
 
     @staticmethod
     def get_task_queue_from_dict(step_dict):
@@ -209,7 +212,7 @@ class Step:
         """
         :return : The step name.
         """
-        return self.mstep.step.__dict__["name"]
+        return self.mstep["name"]
 
     def execute(self, adapter_config):
         """

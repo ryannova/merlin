@@ -572,13 +572,31 @@ class MerlinStudy:
             print(step["name"])
             print(step)
             dag.add_node(step["name"], step)
+        print("***NODES")
+        print(dag.nodes)
         for step in steps:
             if "depends" in step["run"]:
                 for dep in step["run"]["depends"]:
                     print(f"step[name]={step['name']}")
                     print(f"dep={dep}")
-                    dag.add_edge(step["name"], dep)
+                    if dep.endswith("_*"):
+                        dep = dep[:-2]
+                    dag.add_edge(dep, step["name"])
+        dag.add_node("_source", None)
+        for node in dag.nodes:
+            if node == "_source":
+                continue
+            if len(dag.in_edges(node)) == 0:
+                dag.add_edge("_source", node)
+        print("***GRAPH W/ _SOURCE")
+        print(dag.nodes)
+        print(dag.edges)
         t_sorted = dag.topological_sort()
+        print("***TOPOLOGICAL SORT")
+        print(list(t_sorted))
+
+        # TODO add node _source
+
         # for step in t_sorted:
         #    # If we find the source node, we can just add it and continue.
         #    if step == SOURCE:

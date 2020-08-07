@@ -116,7 +116,7 @@ class DAG:
 
         :return: list of children of this task.
         """
-        return self.dag.adjacency_table[task_name]
+        return list(self.dag.get_adjacency_matrix()[task_name])
 
     def num_children(self, task_name):
         """ Find the number of children for the given task in the dag.
@@ -157,7 +157,9 @@ class DAG:
     def calc_backwards_adjacency(self):
         """ initializes our backwards adjacency table """
         adj_matrix = self.dag.get_adjacency_matrix()
+        print(adj_matrix)
         for parent in adj_matrix:
+            print(parent)
             for task_name in adj_matrix[parent]:
                 if task_name in self.backwards_adjacency:
                     self.backwards_adjacency[task_name].append(parent)
@@ -201,6 +203,10 @@ class DAG:
 
                     if self.num_children(task_name) == 1 and task_name != "_source":
 
+                        print("***self.children(task_name)")
+                        print(task_name)
+                        print(self.children)
+                        print(self.children(task_name))
                         child = self.children(task_name)[0]
 
                         if self.num_parents(child) == 1:

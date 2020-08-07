@@ -156,8 +156,9 @@ class DAG:
 
     def calc_backwards_adjacency(self):
         """ initializes our backwards adjacency table """
-        for parent in self.dag.adjacency_table:
-            for task_name in self.dag.adjacency_table[parent]:
+        adj_matrix = self.dag.get_adjacency_matrix()
+        for parent in adj_matrix:
+            for task_name in adj_matrix[parent]:
                 if task_name in self.backwards_adjacency:
                     self.backwards_adjacency[task_name].append(parent)
                 else:

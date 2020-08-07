@@ -5,7 +5,9 @@ import socket
 import subprocess
 
 
-parser = argparse.ArgumentParser(description="Launch 35 merlin workflow jobs")
+parser = argparse.ArgumentParser(
+    description="Launch concurrencies * samples merlin workflow jobs"
+)
 parser.add_argument("run_id", type=int, help="The ID of this run")
 parser.add_argument("output_path", type=str, help="the output path")
 parser.add_argument("spec_path", type=str, help="path to the spec to run")
@@ -20,9 +22,10 @@ elif "pascal" in machine:
 
 # launch 35 merlin workflow jobs
 submit_path = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-concurrencies = [2**0, 2**1, 2**2, 2**3]
-nodes = [1, 1, 1, 1]
-samples = [10**1, 10**2, 10**3, 10**4]
+concurrencies = [2 ** 7]
+nodes = [4]
+samples = [10 ** 6]
+#samples = [10 ** 1, 10 ** 2, 10 ** 3, 10 ** 4, 10 ** 5, 10 ** 6]
 
 # concurrencies = [2**4, 2**5, 2**6, 2**7]
 # nodes = [1, 1, 2, 4]
@@ -54,7 +57,7 @@ for i, concurrency in enumerate(concurrencies):
             real_time = 10
         else:
             real_time = samp_per_worker / 60
-            real_time *= 1.5
+            real_time *= 1.25
             real_time = int(round(real_time, 0))
         # print(f"c{concurrency}_s{sample} : {real_time}")
         if machine == "quartz":

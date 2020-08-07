@@ -3,9 +3,9 @@
 # $2    read_path
 
 runs=( $1 )
-concurrencies=(1 2 4 8)
+concurrencies=(1 2 4 8 16 32 64 128)
 #concurrencies=(1 2 4 8 16 32 64)
-samples=(1 10 100 1000 10000)
+samples=(1 10 100 1000 10000 100000 1000000)
 
 for run in "${runs[@]}"
     do

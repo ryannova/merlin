@@ -37,10 +37,11 @@ from contextlib import suppress
 from copy import deepcopy
 
 from cached_property import cached_property
-from maestrowf.datastructures.core import Study
-from maestrowf.maestro import load_parameter_generator
-from maestrowf.utils import create_dictionary
+#from maestrowf.datastructures.core import Study
+#from maestrowf.maestro import load_parameter_generator
+#from maestrowf.utils import create_dictionary
 
+from merlin.study.merlin_dag import DAG as MerlinDAG
 from merlin.common.abstracts.enums import ReturnCode
 from merlin.spec import defaults
 from merlin.spec.expansion import (
@@ -481,6 +482,7 @@ class MerlinStudy:
             LOG.error(f"Could not generate samples:\n{e}")
             return
 
+    """
     def load_pgen(self, filepath, pargs, env):
         if filepath:
             if pargs is None:
@@ -493,6 +495,7 @@ class MerlinStudy:
             for k, v in params.parameters.items():
                 result[k]["values"] = v
             return result
+    """
 
     def load_dag(self):
         """
@@ -505,34 +508,36 @@ class MerlinStudy:
         parameters = self.expanded_spec.get_parameters()
 
         # Setup the study.
-        study = Study(
-            self.expanded_spec.name,
-            self.expanded_spec.description,
-            studyenv=environment,
-            parameters=parameters,
-            steps=steps,
-            out_path=self.workspace,
-        )
+        #study = Study(
+        #    self.expanded_spec.name,
+        #    self.expanded_spec.description,
+        #    studyenv=environment,
+        #    parameters=parameters,
+        #    steps=steps,
+        #    out_path=self.workspace,
+        #)
 
-        # Prepare the maestro study
-        if self.restart_dir is None:
-            study.setup_workspace()
+        ## Prepare the maestro study
+        #if self.restart_dir is None:
+        #    study.setup_workspace()
 
-        study.setup_environment()
-        study.configure_study(
-            throttle=0,
-            submission_attempts=1,
-            restart_limit=0,
-            use_tmp=None,
-            hash_ws=None,
-        )
+        #study.setup_environment()
+        #study.configure_study(
+        #    throttle=0,
+        #    submission_attempts=1,
+        #    restart_limit=0,
+        #    use_tmp=None,
+        #    hash_ws=None,
+        #)
 
         # Generate the DAG
-        _, maestro_dag = study.stage()
+        #_, maestro_dag = study.stage()
+        merlin_dag = self.stage()
         labels = []
         if self.expanded_spec.merlin["samples"]:
             labels = self.expanded_spec.merlin["samples"]["column_labels"]
-        self.dag = DAG(maestro_dag, labels)
+        self.dag = DAG(merlin_dag, labels)
+        #self.dag = DAG(maestro_dag, labels)
 
     def get_adapter_config(self, override_type=None):
         adapter_config = dict(self.expanded_spec.batch)
@@ -555,3 +560,25 @@ class MerlinStudy:
 
         LOG.debug(f"Adapter config = {adapter_config}")
         return adapter_config
+
+    def stage(self):
+        # TODO convert steps to DAG
+        dag = MerlinDAG()
+        #steps = self.expanded_spec.get_study_steps()
+        steps = list(self.expanded_spec.study)
+        for step in steps:
+            print(step["name"])
+            print(step)
+            dag.add_node(step["name"], step)
+        for step in steps:
+            if "depends" in step["run"]:
+                for dep in step["run"]["depends"]:
+                    dag.add_edge(step["name"], dep)
+        t_sorted = dag.topological_sort()
+        #for step in t_sorted:
+        #    # If we find the source node, we can just add it and continue.
+        #    if step == SOURCE:
+        #        LOGGER.debug("Source node found.")
+        #        dag.add_node(SOURCE, None)
+        #        continue
+        return dag

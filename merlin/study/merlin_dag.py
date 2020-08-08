@@ -32,10 +32,14 @@ class DAG(nx.DiGraph):
 
         # Disallow adding edges to the graph before nodes are added.
         if src not in self.nodes:
-            raise ValueError(f"Attempted to create edge ({src}, {dest}), but node {src} does not exist.")
+            raise ValueError(
+                f"Attempted to create edge ({src}, {dest}), but node {src} does not exist."
+            )
 
         if dest not in self.nodes:
-            raise ValueError(f"Attempted to create edge ({src}, {dest}), but node {dest} does not exist.")
+            raise ValueError(
+                f"Attempted to create edge ({src}, {dest}), but node {dest} does not exist."
+            )
 
         if (src, dest) in self.edges:
             LOG.debug("Edge (%s, %s) already in DAG. Returning.", src, dest)
@@ -73,17 +77,17 @@ class DAG(nx.DiGraph):
         logging.debug(f"Removed edge ({src}, {dest}).")
 
     def get_adjacency_matrix(self):
-        #sparse_matrix = nx.linalg.graphmatrix.adjacency_matrix(self)
+        # sparse_matrix = nx.linalg.graphmatrix.adjacency_matrix(self)
         result = nx.convert.to_dict_of_dicts(self)
         ##print("***Adjacency matrix:")
         ##print(result)
         ## TODO convert back to names
         ##result = sparse_matrix.todok()
-        #result = dict(result)
-        #result_final = {}
-        #for k,v in sparse_matrix.items():
+        # result = dict(result)
+        # result_final = {}
+        # for k,v in sparse_matrix.items():
         #    result_final[k] = [v]
-        #print(result_final)
+        # print(result_final)
         return result
 
     def dfs_subtree(self, src, par=None):

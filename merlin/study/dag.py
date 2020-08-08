@@ -33,33 +33,36 @@ Holds DAG class. TODO make this an interface, separate from Maestro.
 """
 from collections import OrderedDict
 
-from merlin.study.step import Step
+    from merlin.study.step import Step, MerlinStepRecord
 
 
-class DAG:
-    """
-    This class provides methods on a task graph that Merlin needs for staging
-    tasks in celery. It is initialized from am maestro ExecutionGraph, and the
-    major entry point is the group_tasks method, which provides groups of
-    independent chains of tasks.
-    """
-
-    def __init__(self, maestro_dag, labels):
+    class DAG:
         """
-        :param `maestro_dag`: A maestrowf ExecutionGraph.
+        This class provides methods on a task graph that Merlin needs for staging
+        tasks in celery. It is initialized from am maestro ExecutionGraph, and the
+        major entry point is the group_tasks method, which provides groups of
+        independent chains of tasks.
         """
-        self.dag = maestro_dag
-        self.backwards_adjacency = {}
-        self.calc_backwards_adjacency()
-        self.labels = labels
 
-    def step(self, task_name):
-        """Return a Step object for the given task name
+        def __init__(self, maestro_dag, labels):
+            """
+            :param `maestro_dag`: A maestrowf ExecutionGraph.
+            """
+            self.dag = maestro_dag
+            self.backwards_adjacency = {}
+            self.calc_backwards_adjacency()
+            self.labels = labels
 
-        :param `task_name`: The task name.
-        :return: A Merlin Step object.
-        """
-        return Step(self.dag.values[task_name])
+        def step(self, task_name):
+            """Return a Step object for the given task name
+
+            :param `task_name`: The task name.
+            :return: A Merlin Step object.
+            """
+            step_dict = self.dag.values[task_name]
+            workspace_value = ""
+            merlin_step_record = MerlinStepRecord(workspace_value, step_dict)
+        return Step(merlin_step_record) # TODO is this okay?
 
     def calc_depth(self, node, depths, current_depth=0):
         """Calculate the depth of the given node and its children.

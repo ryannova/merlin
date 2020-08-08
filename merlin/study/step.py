@@ -155,7 +155,7 @@ class Step:
         """
         Returns the max number of retries for this step.
         """
-        return self.mstep.step.__dict__["run"]["max_retries"]
+        return self.mstep["run"]["max_retries"]
 
     def __get_restart(self):
         """

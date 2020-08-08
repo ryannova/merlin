@@ -45,14 +45,19 @@ from merlin.study.script_adapter import MerlinScriptAdapter
 LOG = logging.getLogger(__name__)
 
 
-class MerlinStepRecord(_StepRecord):
+class MerlinStepRecord:
     """
     This classs is a wrapper for the Maestro _StepRecord to remove 
     a re-submit message.
     """
 
     def __init__(self, workspace, step, **kwargs):
-        _StepRecord.__init__(self, workspace, step, **kwargs)
+        #_StepRecord.__init__(self, workspace, step, **kwargs)
+        self.workspace = workspace
+        self.step = step
+
+    def __getitem__(self, index):
+        return self.step[index]
 
     def mark_submitted(self):
         """Mark the submission time of the record."""

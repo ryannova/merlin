@@ -39,6 +39,7 @@ from maestrowf.datastructures.core.executiongraph import _StepRecord
 
 from merlin.common.abstracts.enums import ReturnCode
 from merlin.study.script_adapter import MerlinScriptAdapter
+from merlin.utils import create_dirs
 
 
 LOG = logging.getLogger(__name__)
@@ -72,6 +73,9 @@ class MerlinStepRecord:
                 "already been set.",
                 self.name,
             )
+
+    def setup_workspace(self):
+        create_dirs(self.workspace_value)
 
 
 class Step:
@@ -171,6 +175,37 @@ class Step:
 
     restart = property(__get_restart, __set_restart)
 
+    def contains_global_params(self, params):
+        for param_name, param in params.items():
+            if f"$({param_name})" in self.get_cmd():
+                return True
+        return False
+        
+    def expand_global_params(self, params):
+        """
+        Return a list of parameterized copies of this step.
+        """
+        if (params is None or len(params) == 0) or (not self.contains_global_params(params)):
+            return None
+
+        expanded_steps = []
+        expanded_step_names = []
+        num_params = len(next(iter(params.values()))["values"])
+
+        for num in range(num_params):
+            new_step = deepcopy(self)
+            new_step_name = self.merlin_step_record["name"] + "_"
+            for param_name, param in params.items():
+                param_vals = param["values"]
+                param_label = param["label"] 
+                new_step.merlin_step_record["run"]["cmd"] = new_step.get_cmd().replace(f"$({param_name})", str(param_vals[num]))
+                if new_step_name != self.merlin_step_record["name"] + "_":
+                    new_step_name += "."
+                new_step_name += param_label.replace("%%", str(param_vals[num]))
+            expanded_steps.append(new_step)
+            expanded_step_names.append(new_step_name)
+        return list(zip(expanded_steps, expanded_step_names))
+
     def needs_merlin_expansion(self, labels):
         """
         :return : True if the cmd has any of the default keywords or spec
@@ -228,8 +263,10 @@ class Step:
         # Update shell if the task overrides the default value from the batch section
         print("***ADAPTER CONFIG")
         print(adapter_config)
+        if "shell" not in adapter_config:
+            adapter_config["shell"] = "/bin/bash" #TODO is this okay?
         default_shell = adapter_config.pop("shell")
-        shell = self.merlin_step_record.step.run.pop("shell", default_shell)
+        shell = self.merlin_step_record["run"].pop("shell", default_shell)
         adapter_config.update({"shell": shell})
 
         # Update batch type if the task overrides the default value from the batch section
@@ -237,7 +274,7 @@ class Step:
         # Set batch_type to default if unset
         adapter_config.update({"batch_type": default_batch_type})
         # Override the default batch: type: from the step config
-        batch = self.merlin_step_record.step.run.pop("batch", None)
+        batch = self.merlin_step_record["run"].pop("batch", None)
         if batch:
             batch_type = batch.pop("type", default_batch_type)
             adapter_config.update({"batch_type": batch_type})
@@ -251,7 +288,10 @@ class Step:
         adapter_config.update({"batch_type": default_batch_type})
 
         self.merlin_step_record.setup_workspace()
-        self.merlin_step_record.generate_script(adapter)
+        # self.merlin_step_record.generate_script(adapter) TODO make sure all substitutions are taken care of beforehand
+        print(self.merlin_step_record.step)
+        import sys
+        sys.exit()
         step_name = self.name()
         step_dir = self.get_workspace()
 

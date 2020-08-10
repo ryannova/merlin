@@ -520,10 +520,6 @@ class MerlinStudy:
         #    out_path=self.workspace,
         # )
 
-        ## Prepare the maestro study
-        # if self.restart_dir is None:
-        #    study.setup_workspace()
-
         # study.setup_environment()
         # study.configure_study(
         #    throttle=0,
@@ -539,7 +535,7 @@ class MerlinStudy:
         labels = []
         if self.expanded_spec.merlin["samples"]:
             labels = self.expanded_spec.merlin["samples"]["column_labels"]
-        self.dag = DAG(merlin_dag, labels)
+        self.dag = DAG(merlin_dag, labels) #TODO make this unnecessary!
         # self.dag = DAG(maestro_dag, labels)
 
     def get_adapter_config(self, override_type=None):
@@ -565,22 +561,25 @@ class MerlinStudy:
         return adapter_config
 
     def stage(self):
-        # TODO convert steps to DAG
         dag = MerlinDAG()
-        # steps = self.expanded_spec.get_study_steps()
         steps = list(self.expanded_spec.study)
         for step in steps:
             print(step["name"])
             print(step)
             print(type(step))
-            # TODO get workspace_value
             workspace_value = os.path.join(self.workspace, step["name"])
             print(f"WORKSPACE VALUE={workspace_value}")
-            if not isinstance(step, dict):
-                raise TypeError(">:(")
-            dag.add_node(step["name"], Step(MerlinStepRecord(workspace_value, step)))
+            step_obj = Step(MerlinStepRecord(workspace_value, step))
+            parameterized_steps = step_obj.expand_global_params(self.expanded_spec.globals)
+            if parameterized_steps:
+                for (param_step, param_step_name) in parameterized_steps:
+                    dag.add_node(param_step_name, param_step)
+            else:
+                dag.add_node(step["name"], step_obj)
         print("***NODES")
         print(dag.nodes)
+        import sys
+        sys.exit()
         for step in steps:
             if "depends" in step["run"]:
                 for dep in step["run"]["depends"]:

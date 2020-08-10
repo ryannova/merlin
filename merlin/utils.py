@@ -328,6 +328,13 @@ def ensure_directory_exists(**kwargs):
     return True
 
 
+def create_dirs(path):
+    if not os.path.exists(path):
+        LOG.info(f"Directory does not exist. Creating directories to {path}")
+        path = os.path.expanduser(path)
+        os.makedirs(path)
+
+
 def nested_dict_to_namespaces(dic):
     """Code for recursively converting dictionaries of dictionaries
         into SimpleNamespaces instead.

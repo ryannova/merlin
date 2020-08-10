@@ -106,3 +106,9 @@ class DAG(nx.DiGraph):
         result = nx.dfs_tree(self.reverse(), source=node).reverse()  
         result.remove_node(node)
         return result
+
+    def display(self):
+        import matplotlib.pyplot as plt
+        nx.draw(self, with_labels=True, layout=nx.spring_layout(self, k=1.5,iterations=20))
+        plt.show()
+

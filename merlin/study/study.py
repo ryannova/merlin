@@ -572,7 +572,7 @@ class MerlinStudy:
         for step_dict in step_dicts:
             workspace_value = os.path.join(self.workspace, step_dict["name"])
             step_obj = Step(MerlinStepRecord(workspace_value, step_dict))
-            basic_dag.add_node(step_doct["name"], step_obj)
+            basic_dag.add_node(step_dict["name"], step_obj)
 
         # add edges to basic dag
         for node in basic_dag.nodes:
@@ -585,12 +585,7 @@ class MerlinStudy:
                     dep = dep[:-2]
                 basic_dag.add_edge(dep, name)
 
-        import networkx as nx
-        import matplotlib.pyplot as plt
-        import sys
-        nx.draw(basic_dag)
-        plt.show() # display
-        sys.exit()
+        basic_dag.display()
 
         for step in steps:
             print(step["name"])

@@ -55,6 +55,8 @@ class MerlinStepRecord:
         # _StepRecord.__init__(self, workspace, step, **kwargs)
         self.workspace_value = workspace_value
         self.step = step
+        self.param_index = -1
+        self.orig_name = self.step["name"]
 
     def __getitem__(self, key):
         return self.step[key]
@@ -91,19 +93,22 @@ class Step:
         self.merlin_step_record = merlin_step_record
         self.restart = False
 
+    def __getitem__(self, key):
+        return self.merlin_step_record[key]
+
     def get_cmd(self):
         """
         get the run command text body"
         """
         print(self.merlin_step_record)
-        return self.merlin_step_record["run"]["cmd"]
+        return self["run"]["cmd"]
 
     def get_restart_cmd(self):
         """
         get the restart command text body, else return None
         """
-        if "restart" in self.merlin_step_record["run"]:
-            return self.merlin_step_record["run"]["restart"]
+        if "restart" in self["run"]:
+            return self["run"]["restart"]
         return None
 
     def clone_changing_workspace_and_cmd(
@@ -159,7 +164,7 @@ class Step:
         """
         Returns the max number of retries for this step.
         """
-        return self.merlin_step_record["run"]["max_retries"]
+        return self["run"]["max_retries"]
 
     def __get_restart(self):
         """
@@ -174,6 +179,9 @@ class Step:
         self.__restart = val
 
     restart = property(__get_restart, __set_restart)
+
+    def is_parameterized(self):
+        return self.merlin_step_record.param_index != -1
 
     def contains_global_params(self, params):
         for param_name, param in params.items():
@@ -194,12 +202,13 @@ class Step:
 
         for num in range(num_params):
             new_step = deepcopy(self)
-            new_step_name = self.merlin_step_record["name"] + "_"
+            new_step.merlin_step_record.param_index = num
+            new_step_name = self["name"] + "_"
             for param_name, param in params.items():
                 param_vals = param["values"]
                 param_label = param["label"] 
-                new_step.merlin_step_record["run"]["cmd"] = new_step.get_cmd().replace(f"$({param_name})", str(param_vals[num]))
-                if new_step_name != self.merlin_step_record["name"] + "_":
+                new_step["run"]["cmd"] = new_step.get_cmd().replace(f"$({param_name})", str(param_vals[num]))
+                if new_step_name != self["name"] + "_":
                     new_step_name += "."
                 new_step_name += param_label.replace("%%", str(param_vals[num]))
             expanded_steps.append(new_step)
@@ -211,27 +220,19 @@ class Step:
         :return : True if the cmd has any of the default keywords or spec
             specified sample column labels.
         """
+        merlin_step_keywords = ["MERLIN_SAMPLE_ID", "MERLIN_SAMPLE_PATH", "merlin_sample_id", "merlin_sample_path"]
+
         needs_expansion = False
 
         cmd = self.get_cmd()
-        for label in labels + [
-            "MERLIN_SAMPLE_ID",
-            "MERLIN_SAMPLE_PATH",
-            "merlin_sample_id",
-            "merlin_sample_path",
-        ]:
+        for label in labels + merlin_step_keywords:
             if f"$({label})" in cmd:
                 needs_expansion = True
 
         # The restart may need expansion while the cmd does not.
         restart_cmd = self.get_restart_cmd()
         if not needs_expansion and restart_cmd:
-            for label in labels + [
-                "MERLIN_SAMPLE_ID",
-                "MERLIN_SAMPLE_PATH",
-                "merlin_sample_id",
-                "merlin_sample_path",
-            ]:
+            for label in labels + merlin_step_keywords:
                 if f"$({label})" in restart_cmd:
                     needs_expansion = True
 
@@ -247,7 +248,7 @@ class Step:
         """
         :return : The step name.
         """
-        return self.merlin_step_record["name"]
+        return self["name"]
 
     def execute(self, adapter_config):
         """
@@ -266,7 +267,7 @@ class Step:
         if "shell" not in adapter_config:
             adapter_config["shell"] = "/bin/bash" #TODO is this okay?
         default_shell = adapter_config.pop("shell")
-        shell = self.merlin_step_record["run"].pop("shell", default_shell)
+        shell = self["run"].pop("shell", default_shell)
         adapter_config.update({"shell": shell})
 
         # Update batch type if the task overrides the default value from the batch section
@@ -274,7 +275,7 @@ class Step:
         # Set batch_type to default if unset
         adapter_config.update({"batch_type": default_batch_type})
         # Override the default batch: type: from the step config
-        batch = self.merlin_step_record["run"].pop("batch", None)
+        batch = self["run"].pop("batch", None)
         if batch:
             batch_type = batch.pop("type", default_batch_type)
             adapter_config.update({"batch_type": batch_type})

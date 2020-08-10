@@ -14,9 +14,9 @@ class DAG(nx.DiGraph):
         self.values = {}
 
     def add_node(self, name, obj):
-        logging.debug(f"Adding {name}...")
+        logging.debug(f"Adding node '{name}'...")
         if name in self.nodes:
-            LOG.warning(f"Node {name} already exists. Returning.")
+            LOG.warning(f"Node '{name}' already exists. Returning.")
             return
 
         LOG.debug(f"Node {name} added. Value is of type {type(obj)}.")
@@ -33,12 +33,12 @@ class DAG(nx.DiGraph):
         # Disallow adding edges to the graph before nodes are added.
         if src not in self.nodes:
             raise ValueError(
-                f"Attempted to create edge ({src}, {dest}), but node {src} does not exist."
+                f"Attempted to create edge ({src}, {dest}), but node '{src}' does not exist."
             )
 
         if dest not in self.nodes:
             raise ValueError(
-                f"Attempted to create edge ({src}, {dest}), but node {dest} does not exist."
+                f"Attempted to create edge ({src}, {dest}), but node '{dest}' does not exist."
             )
 
         if (src, dest) in self.edges:
@@ -58,13 +58,13 @@ class DAG(nx.DiGraph):
     def remove_edge(self, src, dest):
         if src not in self.nodes:
             LOG.warning(
-                f"Attempted to remove an edge ({src}, {dest}), but {src} does not exist."
+                f"Attempted to remove an edge ({src}, {dest}), but '{src}' does not exist."
             )
             return
 
         if dest not in self.nodes:
             LOG.warning(
-                f"Attempted to remove an edge from ({src}, {dest}), but {dest} does not exist."
+                f"Attempted to remove an edge from ({src}, {dest}), but '{dest}' does not exist."
             )
             return
 

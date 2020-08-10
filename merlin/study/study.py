@@ -574,29 +574,43 @@ class MerlinStudy:
             if parameterized_steps:
                 for (param_step, param_step_name) in parameterized_steps:
                     dag.add_node(param_step_name, param_step)
+                    print(param_step.get_cmd())
             else:
                 dag.add_node(step["name"], step_obj)
         print("***NODES")
         print(dag.nodes)
-        import sys
-        sys.exit()
-        for step in steps:
-            if "depends" in step["run"]:
-                for dep in step["run"]["depends"]:
-                    print(f"step[name]={step['name']}")
-                    print(f"dep={dep}")
-                    if dep.endswith("_*"):
-                        dep = dep[:-2]
-                    dag.add_edge(dep, step["name"])
+        # TODO get children of parameterized nodes to work
+        #import sys
+        #sys.exit()
+
+        for node in dag.nodes:
+            step = dag.values[node]
+            if "depends" not in step["run"]:
+                continue
+            name = step["name"]
+            for dep in step["run"]["depends"]:
+                print(f"step name={name}")
+                print(f"dep={dep}")
+                if dep.endswith("_*"):
+                    dep = dep[:-2]
+                    for node in dag.nodes:
+                        if dag.values[node].merlin_step_record.orig_name != dep:
+                            continue    
+                    dag.add_edge(node, name)
+                else:
+                    dag.add_edge(dep, name)
+
         dag.add_node("_source", None)
         for node in dag.nodes:
             if node == "_source":
                 continue
             if len(dag.in_edges(node)) == 0:
-                dag.add_edge("_source", node)
+                dag.add_edge("_source", node) #TODO is this correct?
         print("***GRAPH W/ _SOURCE")
         print(dag.nodes)
         print(dag.edges)
+        import sys
+        sys.exit()
         t_sorted = dag.topological_sort()
         print("***TOPOLOGICAL SORT")
         print(list(t_sorted))

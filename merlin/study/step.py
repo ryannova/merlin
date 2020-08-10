@@ -203,12 +203,12 @@ class Step:
         for num in range(num_params):
             new_step = deepcopy(self)
             new_step.merlin_step_record.param_index = num
-            new_step_name = self["name"] + "_"
+            new_step_name = self["name"] + "/"
             for param_name, param in params.items():
                 param_vals = param["values"]
                 param_label = param["label"] 
                 new_step["run"]["cmd"] = new_step.get_cmd().replace(f"$({param_name})", str(param_vals[num]))
-                if new_step_name != self["name"] + "_":
+                if new_step_name != self["name"] + "/":
                     new_step_name += "."
                 new_step_name += param_label.replace("%%", str(param_vals[num]))
             expanded_steps.append(new_step)

@@ -561,8 +561,37 @@ class MerlinStudy:
         return adapter_config
 
     def stage(self):
-        dag = MerlinDAG()
-        steps = list(self.expanded_spec.study)
+        basic_dag = MerlinDAG()
+        step_dicts = list(self.expanded_spec.study)
+
+        #TODO
+        # 1. make basic step DAG including edges
+        # 2. make second DAG with parameterized names and edges
+
+        # add nodes to basic dag
+        for step_dict in step_dicts:
+            workspace_value = os.path.join(self.workspace, step_dict["name"])
+            step_obj = Step(MerlinStepRecord(workspace_value, step_dict))
+            basic_dag.add_node(step_doct["name"], step_obj)
+
+        # add edges to basic dag
+        for node in basic_dag.nodes:
+            step = basic_dag.values[node]
+            if "depends" not in step["run"]:
+                continue
+            name = step["name"]
+            for dep in step["run"]["depends"]:
+                if dep.endswith("_*"):
+                    dep = dep[:-2]
+                basic_dag.add_edge(dep, name)
+
+        import networkx as nx
+        import matplotlib.pyplot as plt
+        import sys
+        nx.draw(basic_dag)
+        plt.show() # display
+        sys.exit()
+
         for step in steps:
             print(step["name"])
             print(step)
@@ -584,6 +613,19 @@ class MerlinStudy:
         #sys.exit()
 
         for node in dag.nodes:
+            ancestors = dag.get_ancestor_nodes(node)
+            print(f"***node: {node}")
+            if len(ancestors) == 0:
+                print("no ancestors.")
+            else:
+                print(ancestors.nodes)
+                has_parameterized_ancestor = False
+                for t_node in ancestors.nodes:
+                    if dag.values[t_node].merlin_step_record.param_index != -1:
+                        has_parameterized_ancestor = True
+                        print(f"has parameterized ancestor: {t_node}")
+                        break
+            input()
             step = dag.values[node]
             if "depends" not in step["run"]:
                 continue
@@ -606,6 +648,23 @@ class MerlinStudy:
                 continue
             if len(dag.in_edges(node)) == 0:
                 dag.add_edge("_source", node) #TODO is this correct?
+    
+        
+        for node in dag.nodes:
+            ancestors = dag.get_ancestor_nodes(node)
+            print(f"***node: {name}")
+            print(ancestors.nodes)
+            has_parameterized_ancestor = False
+            for t_node in ancestors.nodes:
+                if dag.values[t_node].merlin_step_record.param_index != -1:
+                    has_parameterized_ancestor = True
+                    print(f"has parameterized ancestor: {t_node}")
+                    break
+            input()
+        import sys
+        sys.exit()
+
+
         print("***GRAPH W/ _SOURCE")
         print(dag.nodes)
         print(dag.edges)

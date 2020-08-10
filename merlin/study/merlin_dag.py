@@ -101,3 +101,8 @@ class DAG(nx.DiGraph):
 
     def detect_cycle(self):
         return not nx.is_directed_acyclic_graph(self)
+
+    def get_ancestor_nodes(self, node):
+        result = nx.dfs_tree(self.reverse(), source=node).reverse()  
+        result.remove_node(node)
+        return result

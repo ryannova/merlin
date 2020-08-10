@@ -62,7 +62,7 @@ class DAG:
         step_dict = self.dag.values[task_name]
         workspace_value = ""
         merlin_step_record = MerlinStepRecord(workspace_value, step_dict)
-    return Step(merlin_step_record) # TODO is this okay?
+        return Step(merlin_step_record) # TODO is this okay?
 
     def calc_depth(self, node, depths, current_depth=0):
         """Calculate the depth of the given node and its children.

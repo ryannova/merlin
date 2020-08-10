@@ -226,6 +226,8 @@ class Step:
         cls_adapter = MerlinScriptAdapter
 
         # Update shell if the task overrides the default value from the batch section
+        print("***ADAPTER CONFIG")
+        print(adapter_config)
         default_shell = adapter_config.pop("shell")
         shell = self.merlin_step_record.step.run.pop("shell", default_shell)
         adapter_config.update({"shell": shell})

@@ -49,6 +49,7 @@ from merlin.spec.expansion import (
 from merlin.spec.override import error_override_vars, replace_override_vars
 from merlin.spec.specification import MerlinSpec
 from merlin.study.dag import DAG
+from merlin.study.step import Step, MerlinStepRecord
 from merlin.study.merlin_dag import DAG as MerlinDAG
 from merlin.utils import (
     contains_shell_ref,
@@ -571,7 +572,13 @@ class MerlinStudy:
         for step in steps:
             print(step["name"])
             print(step)
-            dag.add_node(step["name"], step)
+            print(type(step))
+            # TODO get workspace_value
+            workspace_value = os.path.join(self.workspace, step["name"])
+            print(f"WORKSPACE VALUE={workspace_value}")
+            if not isinstance(step, dict):
+                raise TypeError(">:(")
+            dag.add_node(step["name"], Step(MerlinStepRecord(workspace_value, step)))
         print("***NODES")
         print(dag.nodes)
         for step in steps:

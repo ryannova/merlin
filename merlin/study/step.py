@@ -55,8 +55,8 @@ class MerlinStepRecord:
         self.workspace_value = workspace_value
         self.step = step
 
-    def __getitem__(self, index):
-        return self.step[index]
+    def __getitem__(self, key):
+        return self.step[key]
 
     def mark_submitted(self):
         """Mark the submission time of the record."""
@@ -115,7 +115,7 @@ class Step:
         :param new_workspace : (Optional) the workspace for the new step.
         """
         LOG.debug(f"clone called with new_workspace {new_workspace}")
-        step_dict = deepcopy(self.merlin_step_record)
+        step_dict = deepcopy(self.merlin_step_record.step)
 
         if new_cmd is not None:
             step_dict["run"]["cmd"] = new_cmd

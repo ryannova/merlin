@@ -59,10 +59,11 @@ class DAG:
         :param `task_name`: The task name.
         :return: A Merlin Step object.
         """
-        step_dict = self.dag.values[task_name]
-        workspace_value = ""
-        merlin_step_record = MerlinStepRecord(workspace_value, step_dict)
-        return Step(merlin_step_record) # TODO is this okay?
+        #step_dict = self.dag.values[task_name]
+        #workspace_value = ""
+        #merlin_step_record = MerlinStepRecord(workspace_value, step_dict)
+        #return Step(merlin_step_record) # TODO is this okay?
+        return self.dag.values[task_name]
 
     def calc_depth(self, node, depths, current_depth=0):
         """Calculate the depth of the given node and its children.

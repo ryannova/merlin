@@ -598,6 +598,9 @@ class MerlinStudy:
 
         param_dag = deepcopy(basic_dag)
         for node in list(param_dag.topological_sort()):
+            if node == "_source":
+                continue
+
             # determine whether this step should be parameterized
             has_params = param_dag.values[node].contains_global_params(self.expanded_spec.globals)
 
@@ -605,28 +608,36 @@ class MerlinStudy:
             has_parameterized_ancestor = False
             ancestors = basic_dag.get_ancestor_nodes(node)
             for ancestor in ancestors:
-                if basic_dag.values[ancestor].contains_global_params(self.expanded_spec.globals)
+                if ancestor == "_source":
+                    continue
+                if basic_dag.values[ancestor].contains_global_params(self.expanded_spec.globals):
                     has_parameterized_ancestor = True
                     break
 
             # if this step has parameters or ancestors with parameters
             if has_params or has_parameterized_ancestor:
-                parameterized_steps = step_obj.expand_global_params(self.expanded_spec.globals)
+                parameterized_steps = param_dag.values[node].expand_global_params(self.expanded_spec.globals)
                 if parameterized_steps:
-                    parent_nodes = [x[0] for x in list(basic_dag.in_edges(node))]
-                    child_nodes = [x[1] for x in list(basic_dag.out_edges(node))]
+                    print(f"len of parameterized steps: {len(parameterized_steps)}")
+                    parent_nodes = [x[0] for x in list(param_dag.in_edges(node))]
+                    child_nodes = [x[1] for x in list(param_dag.out_edges(node))]
+                    print(f"parents: {parent_nodes}")
+                    print(f"children: {child_nodes}")
+                    print(f"deleted node: {node}")
                     param_dag.remove_node(node)
                     for (param_step, param_step_name) in parameterized_steps:
+                        print(f"parameterized name: {param_step_name}")
+                        param_step.merlin_step_record.workspace_value = os.path.join(self.workspace, param_step_name)
                         param_dag.add_node(param_step_name, param_step)
                         for parent_node in parent_nodes:
-                            param_dag.add_edge(parent_node, node)
+                            param_dag.add_edge(parent_node, param_step_name)
                         for child_node in child_nodes:
-                            param_dag.add_edge(node, child_node)
+                            param_dag.add_edge(param_step_name, child_node)
                         #print(param_step.get_cmd())
+                else:
+                    print("ERROR does not have parameterized steps")
 
-            workspace_value = os.path.join(self.workspace, step["name"])
-            print(f"WORKSPACE VALUE={workspace_value}")
-
+        param_dag.display()
         
         import sys
         sys.exit()

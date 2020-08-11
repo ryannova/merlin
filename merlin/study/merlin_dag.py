@@ -1,6 +1,7 @@
 """Module that contains the implementation of a Directed-Acyclic Graph."""
 
 import logging
+import random
 
 import networkx as nx
 
@@ -109,6 +110,14 @@ class DAG(nx.DiGraph):
 
     def display(self):
         import matplotlib.pyplot as plt
-        nx.draw(self, with_labels=True, layout=nx.spring_layout(self, k=1.5,iterations=20))
+        n_levels = nx.algorithms.dag.dag_longest_path
+        #position_dict = {}
+        #for node in self.nodes:
+        #    position_dict[node] = 
+
+        #pos = hierarchy_pos(self,1)    
+        #nx.draw(self, pos=pos, with_labels=True)
+
+        #nx.draw(self, with_labels=True, layout=nx.spring_layout(self, k=1, iterations=4, seed=1))
         plt.show()
 

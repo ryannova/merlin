@@ -197,6 +197,8 @@ class Step:
         #if (params is None or len(params) == 0) or (not self.contains_global_params(params)):
             return None
 
+        print(f"***NAME: {self['name']}")
+
         expanded_steps = []
         expanded_step_names = []
         num_params = len(next(iter(params.values()))["values"])

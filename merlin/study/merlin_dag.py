@@ -108,16 +108,49 @@ class DAG(nx.DiGraph):
         result.remove_node(node)
         return result
 
+    def get_tier(self, node):
+        if "_source" not in list(self.nodes):
+            raise ValueError("Node '_source' must be in DAG to measure node tier.")
+        if node == "_source":
+            return 0
+        #return nx.shortest_path_length(self, source="_source", target=node, method='dijkstra')
+        print(node)
+        longest = max(nx.all_simple_paths(self, "_source", node), key=lambda x: len(x))
+        return len(longest)
+
     def display(self):
         import matplotlib.pyplot as plt
-        #n_levels = nx.algorithms.dag.dag_longest_path
-        #position_dict = {}
-        #for node in self.nodes:
-        #    position_dict[node] = 
 
-        #pos = hierarchy_pos(self,1)    
-        #nx.draw(self, pos=pos, with_labels=True)
+        # remember number of nodes on each tier
+        node_count = {}
+        for node in self.nodes:
+            tier = self.get_tier(node)
+            if tier in node_count:
+                node_count[tier] = node_count[tier] + 1
+            else:
+                node_count[tier] = 1
 
-        nx.draw(self, with_labels=True, layout=nx.spring_layout(self, seed=1))
+        # make dict to keep track of horizontal space on each tier
+        horiz_space_used = {}
+        for key in node_count:
+            horiz_space_used[key] = 0
+
+            total_width = 100
+            tier_space = 10
+        pos_dict = {}
+        for node in self.topological_sort():
+            if node == "_source":
+                pos_dict[node] = (0,0)
+                continue
+            tier = self.get_tier(node)
+            n_nodes = node_count[tier]
+            horiz_space = total_width / n_nodes
+            x = horiz_space_used[tier] - ((n_nodes - 1) * horiz_space / 2)
+            horiz_space_used[tier] = horiz_space_used[tier] + horiz_space
+            y = (self.get_tier(node) - 1) * tier_space * -1
+            pos_dict[node] = (x,y)
+
+        #nx.draw(self, with_labels=True, layout=nx.spring_layout(self, seed=1))
+        nx.draw(self, pos_dict, with_labels=True)
         plt.show()
 

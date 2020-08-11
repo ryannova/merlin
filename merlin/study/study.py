@@ -565,8 +565,8 @@ class MerlinStudy:
         step_dicts = list(self.expanded_spec.study)
 
         #TODO
-        # 1. make basic step DAG including edges
-        # 2. make second DAG with parameterized names and edges
+        # @1. make basic step DAG including edges
+        # >2. make second DAG with parameterized names and edges
 
         # add nodes to basic dag
         for step_dict in step_dicts:
@@ -585,77 +585,49 @@ class MerlinStudy:
                     dep = dep[:-2]
                 basic_dag.add_edge(dep, name)
 
-        basic_dag.display()
-
-        for step in steps:
-            print(step["name"])
-            print(step)
-            print(type(step))
-            workspace_value = os.path.join(self.workspace, step["name"])
-            print(f"WORKSPACE VALUE={workspace_value}")
-            step_obj = Step(MerlinStepRecord(workspace_value, step))
-            parameterized_steps = step_obj.expand_global_params(self.expanded_spec.globals)
-            if parameterized_steps:
-                for (param_step, param_step_name) in parameterized_steps:
-                    dag.add_node(param_step_name, param_step)
-                    print(param_step.get_cmd())
-            else:
-                dag.add_node(step["name"], step_obj)
-        print("***NODES")
-        print(dag.nodes)
-        # TODO get children of parameterized nodes to work
-        #import sys
-        #sys.exit()
-
-        for node in dag.nodes:
-            ancestors = dag.get_ancestor_nodes(node)
-            print(f"***node: {node}")
-            if len(ancestors) == 0:
-                print("no ancestors.")
-            else:
-                print(ancestors.nodes)
-                has_parameterized_ancestor = False
-                for t_node in ancestors.nodes:
-                    if dag.values[t_node].merlin_step_record.param_index != -1:
-                        has_parameterized_ancestor = True
-                        print(f"has parameterized ancestor: {t_node}")
-                        break
-            input()
-            step = dag.values[node]
-            if "depends" not in step["run"]:
-                continue
-            name = step["name"]
-            for dep in step["run"]["depends"]:
-                print(f"step name={name}")
-                print(f"dep={dep}")
-                if dep.endswith("_*"):
-                    dep = dep[:-2]
-                    for node in dag.nodes:
-                        if dag.values[node].merlin_step_record.orig_name != dep:
-                            continue    
-                    dag.add_edge(node, name)
-                else:
-                    dag.add_edge(dep, name)
-
-        dag.add_node("_source", None)
-        for node in dag.nodes:
+        basic_dag.add_node("_source", None)
+        for node in basic_dag.nodes:
             if node == "_source":
                 continue
-            if len(dag.in_edges(node)) == 0:
-                dag.add_edge("_source", node) #TODO is this correct?
-    
-        
-        for node in dag.nodes:
-            ancestors = dag.get_ancestor_nodes(node)
-            print(f"***node: {name}")
-            print(ancestors.nodes)
+            if len(basic_dag.in_edges(node)) == 0:
+                basic_dag.add_edge("_source", node)
+
+        # if there are no global parameters, return the basic DAG.
+        if self.expanded_spec.globals is None or len(self.expanded_spec.globals) == 0:
+            return basic_dag
+
+        param_dag = deepcopy(basic_dag)
+        for node in list(param_dag.topological_sort()):
+            # determine whether this step should be parameterized
+            has_params = param_dag.values[node].contains_global_params(self.expanded_spec.globals)
+
+            # TODO working yet?
             has_parameterized_ancestor = False
-            for t_node in ancestors.nodes:
-                if dag.values[t_node].merlin_step_record.param_index != -1:
+            ancestors = basic_dag.get_ancestor_nodes(node)
+            for ancestor in ancestors:
+                if basic_dag.values[ancestor].contains_global_params(self.expanded_spec.globals)
                     has_parameterized_ancestor = True
-                    print(f"has parameterized ancestor: {t_node}")
                     break
-            input()
+
+            # if this step has parameters or ancestors with parameters
+            if has_params or has_parameterized_ancestor:
+                parameterized_steps = step_obj.expand_global_params(self.expanded_spec.globals)
+                if parameterized_steps:
+                    parent_nodes = [x[0] for x in list(basic_dag.in_edges(node))]
+                    child_nodes = [x[1] for x in list(basic_dag.out_edges(node))]
+                    param_dag.remove_node(node)
+                    for (param_step, param_step_name) in parameterized_steps:
+                        param_dag.add_node(param_step_name, param_step)
+                        for parent_node in parent_nodes:
+                            param_dag.add_edge(parent_node, node)
+                        for child_node in child_nodes:
+                            param_dag.add_edge(node, child_node)
+                        #print(param_step.get_cmd())
+
+            workspace_value = os.path.join(self.workspace, step["name"])
+            print(f"WORKSPACE VALUE={workspace_value}")
+
+        
         import sys
         sys.exit()
 
@@ -665,9 +637,6 @@ class MerlinStudy:
         print(dag.edges)
         import sys
         sys.exit()
-        t_sorted = dag.topological_sort()
-        print("***TOPOLOGICAL SORT")
-        print(list(t_sorted))
 
         # TODO add node _source
 

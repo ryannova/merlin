@@ -193,7 +193,8 @@ class Step:
         """
         Return a list of parameterized copies of this step.
         """
-        if (params is None or len(params) == 0) or (not self.contains_global_params(params)):
+        if params is None or len(params) == 0:
+        #if (params is None or len(params) == 0) or (not self.contains_global_params(params)):
             return None
 
         expanded_steps = []

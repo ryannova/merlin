@@ -652,6 +652,12 @@ class MerlinStudy:
                             param_dag.add_edge(param_step_name, child_node)
                 else:
                     print("ERROR does not have parameterized steps")
+            
+            if node in param_dag.values:
+                print(param_dag.values[node].get_cmd())
+            else:
+                print(param_dag.values[param_step_name].get_cmd())
+            input()
 
         param_dag.display()
 

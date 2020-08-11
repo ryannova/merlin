@@ -24,6 +24,10 @@ class DAG(nx.DiGraph):
         super().add_node(name)
         self.values[name] = obj
 
+    def remove_node(self, node):
+        self.values.pop(node)
+        super().remove_node(node)
+
     def add_edge(self, src, dest):
         # Disallow loops to the same node.
         if src == dest:

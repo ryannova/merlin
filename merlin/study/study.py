@@ -615,17 +615,17 @@ class MerlinStudy:
             if bottleneck_node:
                 continue
 
-            has_parameterized_ancestor = False
-            ancestors = basic_dag.get_ancestor_nodes(node)
-            for ancestor in ancestors:
-                if ancestor == "_source":
+            has_parameterized_parent = False
+            parents = list(basic_dag.predecessors(node))
+            for parent in parents:
+                if parent == "_source":
                     continue
-                if basic_dag.values[ancestor].contains_global_params(self.expanded_spec.globals):
-                    has_parameterized_ancestor = True
+                if basic_dag.values[parent].contains_global_params(self.expanded_spec.globals):
+                    has_parameterized_parent = True
                     break
 
-            # if this step has parameters or ancestors with parameters
-            if has_params or has_parameterized_ancestor:
+            # if this step has parameters or parents with parameters
+            if has_params or has_parameterized_parent:
                 parameterized_steps = param_dag.values[node].expand_global_params(self.expanded_spec.globals)
                 if parameterized_steps:
                     print(f"len of parameterized steps: {len(parameterized_steps)}")

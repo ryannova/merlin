@@ -612,7 +612,7 @@ class MerlinStudy:
                         continue
                     bottleneck_node = True
                     break
-            if bottleneck_node:
+            if bottleneck_node and not has_params:
                 continue
 
             has_parameterized_parent = False
@@ -642,7 +642,7 @@ class MerlinStudy:
                         for parent_node in parent_nodes:
                             parent_param_index = param_dag.values[parent_node].merlin_step_record.param_index
                             node_param_index = param_dag.values[param_step_name].merlin_step_record.param_index
-                            if parent_param_index == -1 or parent_param_index == node_param_index:
+                            if has_params or parent_param_index == -1 or parent_param_index == node_param_index:
                                 param_dag.add_edge(parent_node, param_step_name)
                         for child_node in child_nodes:
                             param_dag.add_edge(param_step_name, child_node)

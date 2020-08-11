@@ -604,7 +604,17 @@ class MerlinStudy:
             # determine whether this step should be parameterized
             has_params = param_dag.values[node].contains_global_params(self.expanded_spec.globals)
 
-            # TODO working yet?
+            # TODO make sure this works, is robust, and put in the correct place
+            bottleneck_node = False
+            if "depends" in param_dag.values[node]["run"]:
+                for dep in param_dag.values[node]["run"]["depends"]:
+                    if not dep.endswith("_*"):
+                        continue
+                    bottleneck_node = True
+                    break
+            if bottleneck_node:
+                continue
+
             has_parameterized_ancestor = False
             ancestors = basic_dag.get_ancestor_nodes(node)
             for ancestor in ancestors:
@@ -630,10 +640,12 @@ class MerlinStudy:
                         param_step.merlin_step_record.workspace_value = os.path.join(self.workspace, param_step_name)
                         param_dag.add_node(param_step_name, param_step)
                         for parent_node in parent_nodes:
-                            param_dag.add_edge(parent_node, param_step_name)
+                            parent_param_index = param_dag.values[parent_node].merlin_step_record.param_index
+                            node_param_index = param_dag.values[param_step_name].merlin_step_record.param_index
+                            if parent_param_index == -1 or parent_param_index == node_param_index:
+                                param_dag.add_edge(parent_node, param_step_name)
                         for child_node in child_nodes:
                             param_dag.add_edge(param_step_name, child_node)
-                        #print(param_step.get_cmd())
                 else:
                     print("ERROR does not have parameterized steps")
 
@@ -649,12 +661,4 @@ class MerlinStudy:
         import sys
         sys.exit()
 
-        # TODO add node _source
-
-        # for step in t_sorted:
-        #    # If we find the source node, we can just add it and continue.
-        #    if step == SOURCE:
-        #        LOGGER.debug("Source node found.")
-        #        dag.add_node(SOURCE, None)
-        #        continue
         return dag

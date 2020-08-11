@@ -110,7 +110,7 @@ class DAG(nx.DiGraph):
 
     def display(self):
         import matplotlib.pyplot as plt
-        n_levels = nx.algorithms.dag.dag_longest_path
+        #n_levels = nx.algorithms.dag.dag_longest_path
         #position_dict = {}
         #for node in self.nodes:
         #    position_dict[node] = 
@@ -118,6 +118,6 @@ class DAG(nx.DiGraph):
         #pos = hierarchy_pos(self,1)    
         #nx.draw(self, pos=pos, with_labels=True)
 
-        #nx.draw(self, with_labels=True, layout=nx.spring_layout(self, k=1, iterations=4, seed=1))
+        nx.draw(self, with_labels=True, layout=nx.spring_layout(self, seed=1))
         plt.show()
 

@@ -11,6 +11,11 @@ global.parameters:
         label: VAR.%%
 
 study:
+    - name: s0
+      description: ""
+      run:
+          cmd: echo "s0"
+
     - name: s1
       description: ""
       run:

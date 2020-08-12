@@ -126,7 +126,6 @@ class DAG(nx.DiGraph):
     def display(self):
         import matplotlib.pyplot as plt
 
-
         # remember number of nodes on each tier
         node_count = {}
         for node in self.nodes:
@@ -145,7 +144,7 @@ class DAG(nx.DiGraph):
         total_width = 100
         tier_space = 10
         pos_dict = {}
-        for node in self.topological_sort():
+        for node in list(reversed(list(self.topological_sort()))):
             if node == "_source":
                 pos_dict[node] = (0,0)
                 continue

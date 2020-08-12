@@ -653,6 +653,7 @@ class MerlinStudy:
                 else:
                     print("ERROR does not have parameterized steps")
             
+            """
             if node not in param_dag.values:
                 node = param_step_name
 
@@ -666,6 +667,7 @@ class MerlinStudy:
             print(param_dag.values[node].get_cmd())
             print(param_dag.values[node].merlin_step_record.workspace_value)
             input()
+            """
 
         param_dag.display()
 

@@ -653,10 +653,18 @@ class MerlinStudy:
                 else:
                     print("ERROR does not have parameterized steps")
             
-            if node in param_dag.values:
-                print(param_dag.values[node].get_cmd())
-            else:
-                print(param_dag.values[param_step_name].get_cmd())
+            if node not in param_dag.values:
+                node = param_step_name
+
+            node_cmd = param_dag.values[node].get_cmd()
+
+            # TODO replace workspace
+            if re.search(r"\$\(\w+\.workspace\)", node_cmd): #TODO make sure \w+ is correct for step names
+                # TODO error if workspace is not an ancestor?
+                ancestors = param_dag.get_ancestor_nodes(node)
+
+            print(param_dag.values[node].get_cmd())
+            print(param_dag.values[node].merlin_step_record.workspace_value)
             input()
 
         param_dag.display()

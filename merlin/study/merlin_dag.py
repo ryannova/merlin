@@ -139,8 +139,9 @@ class DAG(nx.DiGraph):
         for key in node_count:
             horiz_space_used[key] = 0
 
-            total_width = 100
-            tier_space = 10
+        # build a dictionary of positions for each node
+        total_width = 100
+        tier_space = 10
         pos_dict = {}
         for node in self.topological_sort():
             if node == "_source":

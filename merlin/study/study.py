@@ -35,6 +35,7 @@ import subprocess
 import time
 from contextlib import suppress
 from copy import deepcopy
+import re
 
 from cached_property import cached_property
 
@@ -585,29 +586,32 @@ class MerlinStudy:
                     dep = dep[:-2]
                 basic_dag.add_edge(dep, name)
 
-        basic_dag.add_node("_source", None)
+        basic_dag.add_node("_source", None, node_id=-1)
         for node in basic_dag.nodes:
             if node == "_source":
                 continue
             if len(basic_dag.in_edges(node)) == 0:
                 basic_dag.add_edge("_source", node)
 
+        print(f"***BASIC_DAG: {basic_dag.node_ids}")
+
         # if there are no global parameters, return the basic DAG.
         if self.expanded_spec.globals is None or len(self.expanded_spec.globals) == 0:
             return basic_dag
 
+        # expand paramaterized steps with param_dag
         param_dag = deepcopy(basic_dag)
-        for node in list(param_dag.topological_sort()):
-            if node == "_source":
+        for node_name in list(param_dag.topological_sort()):
+            if node_name == "_source":
                 continue
 
             # determine whether this step should be parameterized
-            has_params = param_dag.values[node].contains_global_params(self.expanded_spec.globals)
+            has_params = param_dag.values[node_name].contains_global_params(self.expanded_spec.globals)
 
             # TODO make sure this works, is robust, and put in the correct place
             bottleneck_node = False
-            if "depends" in param_dag.values[node]["run"]:
-                for dep in param_dag.values[node]["run"]["depends"]:
+            if "depends" in param_dag.values[node_name]["run"]:
+                for dep in param_dag.values[node_name]["run"]["depends"]:
                     if not dep.endswith("_*"):
                         continue
                     bottleneck_node = True
@@ -616,7 +620,7 @@ class MerlinStudy:
                 continue
 
             has_parameterized_parent = False
-            parents = list(basic_dag.predecessors(node))
+            parents = list(basic_dag.predecessors(node_name))
             for parent in parents:
                 if parent == "_source":
                     continue
@@ -626,19 +630,21 @@ class MerlinStudy:
 
             # if this step has parameters or parents with parameters
             if has_params or has_parameterized_parent:
-                parameterized_steps = param_dag.values[node].expand_global_params(self.expanded_spec.globals)
+                parameterized_steps = param_dag.values[node_name].expand_global_params(self.expanded_spec.globals)
                 if parameterized_steps:
                     print(f"len of parameterized steps: {len(parameterized_steps)}")
-                    parent_nodes = [x[0] for x in list(param_dag.in_edges(node))]
-                    child_nodes = [x[1] for x in list(param_dag.out_edges(node))]
+                    parent_nodes = [x[0] for x in list(param_dag.in_edges(node_name))]
+                    child_nodes = [x[1] for x in list(param_dag.out_edges(node_name))]
                     print(f"parents: {parent_nodes}")
                     print(f"children: {child_nodes}")
-                    print(f"deleted node: {node}")
-                    param_dag.remove_node(node)
+                    print(f"deleted node: {node_name}")
+                    node_id = basic_dag.node_ids[node_name]
+                    param_dag.remove_node(node_name)
                     for (param_step, param_step_name) in parameterized_steps:
                         print(f"parameterized name: {param_step_name}")
                         param_step.merlin_step_record.workspace_value = os.path.join(self.workspace, param_step_name)
-                        param_dag.add_node(param_step_name, param_step)
+                        print(f"***Adding {node_id} id to node {param_step_name}")
+                        param_dag.add_node(param_step_name, param_step, node_id=node_id)
                         for parent_node in parent_nodes:
                             print(parent_node)
                             if parent_node == "_source":
@@ -653,32 +659,50 @@ class MerlinStudy:
                 else:
                     print("ERROR does not have parameterized steps")
             
-            """
-            if node not in param_dag.values:
-                node = param_step_name
+        print("***PARAM DAG IDS")
+        print(param_dag.node_ids)
 
-            node_cmd = param_dag.values[node].get_cmd()
+        # expand $(<step>.workspace) references in param_dag
+        for node_name in list(param_dag.topological_sort()):
+            if node_name == "_source":
+                continue
 
-            # TODO replace workspace
+            node_cmd = param_dag.values[node_name].get_cmd()
+
             if re.search(r"\$\(\w+\.workspace\)", node_cmd): #TODO make sure \w+ is correct for step names
-                # TODO error if workspace is not an ancestor?
-                ancestors = param_dag.get_ancestor_nodes(node)
+                print(node_name)
+                ancestors = param_dag.get_ancestor_nodes(node_name)
+                #print("ancestors: " + str(list(ancestors)))
+                ancestor_ids = [param_dag.node_ids[x] for x in param_dag.get_ancestor_nodes(node_name)]
+                #print("ancestor ids: " + str(list(ancestor_ids)))
+                workspace_node_names = re.findall(r"\$\(\w+\.workspace\)", node_cmd)
+                for workspace_name in workspace_node_names:
+                    #workspace_name = workspace_name.strip("$(").strip("\.workspace)")
+                    basic_workspace_name = re.findall("\w+\.", workspace_name)[0][:-1]
+                    #print(workspace_name)
+                    workspace_id = basic_dag.node_ids[basic_workspace_name]
+                    if workspace_id not in ancestor_ids:
+                        raise ValueError(f"Step '{node_name}' is referencing an incorrect step workspace!")
+                    param_index = param_dag.values[node_name].merlin_step_record.param_index
+                    for node in param_dag.nodes:
+                        if param_dag.node_ids[node] == workspace_id and param_dag.values[node].merlin_step_record.param_index == param_index:
+                            workspace_path = param_dag.values[node].merlin_step_record.workspace_value
+                            break
+                    #print(f"{workspace_name} id: {workspace_id}")
+                    print(workspace_name)
+                    print(workspace_path)
+                    param_dag.values[node_name]["run"]["cmd"] = node_cmd.replace(workspace_name, workspace_path)
+                    node_cmd = param_dag.values[node_name].get_cmd()
+                    print("***NEW CMD:")
+                    print(param_dag.values[node_name]["run"]["cmd"])
 
-            print(param_dag.values[node].get_cmd())
-            print(param_dag.values[node].merlin_step_record.workspace_value)
-            input()
-            """
+            #print(param_dag.values[node_name].get_cmd())
+            #print(param_dag.values[node_name].merlin_step_record.workspace_value)
+            #input()
 
         param_dag.display()
 
-        import sys
-        sys.exit()
+        #import sys
+        #sys.exit()
 
-
-        print("***GRAPH W/ _SOURCE")
-        print(dag.nodes)
-        print(dag.edges)
-        import sys
-        sys.exit()
-
-        return dag
+        return param_dag

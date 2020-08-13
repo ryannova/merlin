@@ -14,8 +14,10 @@ class DAG(nx.DiGraph):
     def __init__(self):
         super(DAG, self).__init__()
         self.values = {}
+        self.node_ids = {}
+        self.curr_id = 0
 
-    def add_node(self, name, obj):
+    def add_node(self, name, obj, node_id=None):
         logging.debug(f"Adding node '{name}'...")
         if name in self.nodes:
             LOG.warning(f"Node '{name}' already exists. Returning.")
@@ -24,9 +26,16 @@ class DAG(nx.DiGraph):
         LOG.debug(f"Node {name} added. Value is of type {type(obj)}.")
         super().add_node(name)
         self.values[name] = obj
+        if node_id is not None:
+            new_id = node_id
+        else:
+            new_id = self.curr_id
+            self.curr_id += 1
+        self.node_ids[name] = new_id
 
     def remove_node(self, node):
         self.values.pop(node)
+        #self.node_ids.pop(node)
         super().remove_node(node)
 
     def add_edge(self, src, dest):

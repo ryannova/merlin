@@ -28,13 +28,13 @@
 # SOFTWARE.
 ###############################################################################
 
+from enum import Enum
 import logging
 import re
 from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime
 
-from maestrowf.abstracts.enums import State
 from maestrowf.datastructures.core.executiongraph import _StepRecord
 
 from merlin.common.abstracts.enums import ReturnCode
@@ -44,6 +44,22 @@ from merlin.study.localscriptadapter import LocalScriptAdapter
 
 
 LOG = logging.getLogger(__name__)
+
+class State(Enum):
+    INITIALIZED = 0
+    PENDING = 1
+    WAITING = 2
+    RUNNING = 3
+    FINISHING = 4
+    FINISHED = 5
+    QUEUED = 6
+    FAILED = 7
+    INCOMPLETE = 8
+    HWFAILURE = 9
+    TIMEDOUT = 10
+    UNKNOWN = 11
+    CANCELLED = 12
+    DRYRUN = 13
 
 def round_datetime_seconds(input_datetime):
     new_datetime = input_datetime
@@ -416,7 +432,7 @@ class Step:
             return ReturnCode.DRY_OK
 
         LOG.info(f"Executing step '{step_name}' in '{step_dir}'...")
-        # TODO: once maestrowf is updated so that execute returns a
+        # TODO: make execute return a
         # submissionrecord, then we need to return the record.return_code here
         # at that point, we can drop the use of MerlinScriptAdapter above, and
         # go back to using the adapter specified by the adapter_config['type']

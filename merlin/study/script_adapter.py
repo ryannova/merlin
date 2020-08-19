@@ -36,11 +36,10 @@ import logging
 import os
 
 from maestrowf.interfaces.script import SubmissionRecord
-from maestrowf.interfaces.script.localscriptadapter import LocalScriptAdapter
 from maestrowf.interfaces.script.slurmscriptadapter import SlurmScriptAdapter
-from maestrowf.utils import start_process
 
 from merlin.common.abstracts.enums import ReturnCode
+from merlin.study.localscriptadapter import LocalScriptAdapter, start_process
 
 
 LOG = logging.getLogger(__name__)

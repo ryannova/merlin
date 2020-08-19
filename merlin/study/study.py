@@ -506,10 +506,14 @@ class MerlinStudy:
         Generates a dag (a directed acyclic execution graph).
         Assigns it to `self.dag`.
         """
-        environment = self.expanded_spec.get_study_environment()
-        steps = self.expanded_spec.get_study_steps()
+        import pprint
+        pp = pprint.PrettyPrinter()
 
-        parameters = self.expanded_spec.get_parameters()
+        pp.pprint(self.expanded_spec.sections)
+        #environment = self.expanded_spec.get_study_environment()
+        #steps = self.expanded_spec.get_study_steps()
+
+        #parameters = self.expanded_spec.get_parameters()
 
         # Setup the study.
         # study = Study(

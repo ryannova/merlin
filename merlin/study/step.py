@@ -40,10 +40,18 @@ from maestrowf.datastructures.core.executiongraph import _StepRecord
 from merlin.common.abstracts.enums import ReturnCode
 from merlin.study.script_adapter import MerlinScriptAdapter
 from merlin.utils import create_dirs
+from merlin.study.localscriptadapter import LocalScriptAdapter
 
 
 LOG = logging.getLogger(__name__)
 
+def round_datetime_seconds(input_datetime):
+    new_datetime = input_datetime
+
+    if new_datetime.microsecond >= 500000:
+        new_datetime = new_datetime + datetime.timedelta(seconds=1)
+
+    return new_datetime.replace(microsecond=0)
 
 class MerlinStepRecord:
     """
@@ -58,27 +66,128 @@ class MerlinStepRecord:
         self.param_index = -1
         self.orig_name = self.step["name"]
 
+        self.jobid = kwargs.get("jobid", [])
+        self.script = kwargs.get("script", "")
+        self.restart_script = kwargs.get("restart", "")
+        self.to_be_scheduled = False
+        self.restart_limit = kwargs.get("restart_limit", 3)
+
+        # Status Information
+        self._num_restarts = 0
+        self._submit_time = None
+        self._start_time = None
+        self._end_time = None
+        self.status = kwargs.get("status", State.INITIALIZED)
+
     def __getitem__(self, key):
         return self.step[key]
 
     def mark_submitted(self):
         """Mark the submission time of the record."""
-        LOG.debug(
-            "Marking %s as submitted (PENDING) -- previously %s", self.name, self.status
-        )
+        #LOG.debug(
+        #    "Marking %s as submitted (PENDING) -- previously %s", self.name, self.status
+        #)
         self.status = State.PENDING
         if not self._submit_time:
             self._submit_time = datetime.now()
         else:
-            LOG.debug(
-                "Merlin: Cannot set the submission time of '%s' because it has "
-                "already been set.",
-                self.name,
-            )
+            #LOG.debug(
+            #    "Merlin: Cannot set the submission time of '%s' because it has "
+            #    "already been set.",
+            #    self.name,
+            #)
+            pass
 
     def setup_workspace(self):
         create_dirs(self.workspace_value)
 
+    def execute(self, adapter):
+        self.mark_submitted()
+        retcode, jobid = self._execute(adapter, self.script)
+
+        if retcode == SubmissionCode.OK:
+            self.jobid.append(jobid)
+
+        return retcode
+
+    def restart(self, adapter):
+        retcode, jobid = self._execute(adapter, self.restart_script)
+
+        if retcode == SubmissionCode.OK:
+            self.jobid.append(jobid)
+
+        return retcode
+
+    def _execute(self, adapter, script):
+        if self.to_be_scheduled:
+            srecord = adapter.submit(
+                self.step, script, self.workspace.value)
+        else:
+            self.mark_running()
+            ladapter = LocalScriptAdapter()
+            srecord = ladapter.submit(
+                self.step, script, self.workspace.value)
+
+        retcode = srecord.submission_code
+        jobid = srecord.job_identifier
+        return retcode, jobid
+
+    def mark_submitted(self):
+        """Mark the submission time of the record."""
+        #LOGGER.debug(
+        #    "Marking %s as submitted (PENDING) -- previously %s",
+        #    self.name,
+        #    self.status)
+        self.status = State.PENDING
+        if not self._submit_time:
+            self._submit_time = round_datetime_seconds(datetime.now())
+        else:
+            pass
+            #LOGGER.warning(
+            #    "Cannot set the submission time of '%s' because it has "
+            #    "already been set.", self.name
+            #)
+
+    def mark_running(self):
+        """Mark the start time of the record."""
+        #LOGGER.debug(
+        #    "Marking %s as running (RUNNING) -- previously %s",
+        #    self.name,
+        #    self.status)
+        self.status = State.RUNNING
+        if not self._start_time:
+            self._start_time = round_datetime_seconds(datetime.now())
+
+    def mark_end(self, state):
+        """
+        Mark the end time of the record with associated termination state.
+
+        :param state: State enum corresponding to termination state.
+        """
+        #LOGGER.debug(
+        #    "Marking %s as finished (%s) -- previously %s",
+        #    self.name,
+        #    state,
+        #    self.status)
+        self.status = state
+        if not self._end_time:
+            self._end_time = round_datetime_seconds(datetime.now())
+
+    def mark_restart(self):
+        """Mark the end time of the record."""
+        #LOGGER.debug(
+        #    "Marking %s as restarting (TIMEOUT) -- previously %s",
+        #    self.name,
+        #    self.status)
+        self.status = State.TIMEDOUT
+        # Designating a restart limit of zero as an unlimited restart setting.
+        # Otherwise, if we're less than restart limit, attempt another restart.
+        if self.restart_limit == 0 or \
+                self._num_restarts < self.restart_limit:
+            self._num_restarts += 1
+            return True
+        else:
+            return False
 
 class Step:
     """
@@ -293,9 +402,9 @@ class Step:
 
         self.merlin_step_record.setup_workspace()
         # self.merlin_step_record.generate_script(adapter) TODO make sure all substitutions are taken care of beforehand
-        print(self.merlin_step_record.step)
-        import sys
-        sys.exit()
+        #print(self.merlin_step_record.step)
+        #import sys
+        #sys.exit()
         step_name = self.name()
         step_dir = self.get_workspace()
 

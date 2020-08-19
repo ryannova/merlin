@@ -132,7 +132,7 @@ class DAG(nx.DiGraph):
         longest = max(nx.all_simple_paths(self, "_source", node), key=lambda x: len(x))
         return len(longest)
 
-    def display(self):
+    def display(self, hide_src=True):
         import matplotlib.pyplot as plt
 
         # remember number of nodes on each tier
@@ -165,13 +165,13 @@ class DAG(nx.DiGraph):
             y = (self.get_tier(node) - 1) * tier_space * -1
             pos_dict[node] = (x,y)
 
-        # copy this DAG, but without the '_source' node
         display_dag = self
-        if "_source" in self.nodes:
-            no_source = deepcopy(self)
-            no_source.remove_node("_source")
-            pos_dict.pop("_source")
-            display_dag = no_source
+        if hide_src: # copy this DAG, but without the '_source' node
+            if "_source" in self.nodes:
+                no_source = deepcopy(self)
+                no_source.remove_node("_source")
+                pos_dict.pop("_source")
+                display_dag = no_source
 
         #nx.draw(self, with_labels=True, layout=nx.spring_layout(self, seed=1))
         nx.draw(display_dag, pos_dict, with_labels=True)

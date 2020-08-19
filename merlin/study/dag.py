@@ -39,16 +39,13 @@ from merlin.study.step import Step, MerlinStepRecord
 class DAG:
     """
     This class provides methods on a task graph that Merlin needs for staging
-    tasks in celery. It is initialized from am maestro ExecutionGraph, and the
+    tasks in celery. The
     major entry point is the group_tasks method, which provides groups of
     independent chains of tasks.
     """
 
-    def __init__(self, maestro_dag, labels):
-        """
-        :param `maestro_dag`: A maestrowf ExecutionGraph.
-        """
-        self.dag = maestro_dag
+    def __init__(self, merlin_dag, labels):
+        self.dag = merlin_dag
         self.backwards_adjacency = {}
         self.calc_backwards_adjacency()
         self.labels = labels

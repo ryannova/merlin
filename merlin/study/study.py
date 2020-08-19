@@ -501,10 +501,6 @@ class MerlinStudy:
         Generates a dag (a directed acyclic execution graph).
         Assigns it to `self.dag`.
         """
-        import pprint
-        pp = pprint.PrettyPrinter()
-
-        pp.pprint(self.expanded_spec.sections)
         #environment = self.expanded_spec.get_study_environment()
         #steps = self.expanded_spec.get_study_steps()
 
@@ -561,6 +557,8 @@ class MerlinStudy:
         return adapter_config
 
     def stage(self):
+        SOURCE_NODE = "_source"
+
         basic_dag = MerlinDAG()
         step_dicts = list(self.expanded_spec.study)
 
@@ -585,12 +583,12 @@ class MerlinStudy:
                     dep = dep[:-2]
                 basic_dag.add_edge(dep, name)
 
-        basic_dag.add_node("_source", None, node_id=-1)
+        basic_dag.add_node(SOURCE_NODE, None, node_id=-1)
         for node in basic_dag.nodes:
-            if node == "_source":
+            if node == SOURCE_NODE:
                 continue
             if len(basic_dag.in_edges(node)) == 0:
-                basic_dag.add_edge("_source", node)
+                basic_dag.add_edge(SOURCE_NODE, node)
 
         print(f"***BASIC_DAG: {basic_dag.node_ids}")
 
@@ -601,7 +599,7 @@ class MerlinStudy:
         # expand paramaterized steps with param_dag
         param_dag = deepcopy(basic_dag)
         for node_name in list(param_dag.topological_sort()):
-            if node_name == "_source":
+            if node_name == SOURCE_NODE:
                 continue
 
             # determine whether this step should be parameterized
@@ -621,7 +619,7 @@ class MerlinStudy:
             has_parameterized_parent = False
             parents = list(basic_dag.predecessors(node_name))
             for parent in parents:
-                if parent == "_source":
+                if parent == SOURCE_NODE:
                     continue
                 if basic_dag.values[parent].contains_global_params(self.expanded_spec.globals):
                     has_parameterized_parent = True
@@ -646,7 +644,7 @@ class MerlinStudy:
                         param_dag.add_node(param_step_name, param_step, node_id=node_id)
                         for parent_node in parent_nodes:
                             print(parent_node)
-                            if parent_node == "_source":
+                            if parent_node == SOURCE_NODE:
                                 parent_param_index = -1
                             else:
                                 parent_param_index = param_dag.values[parent_node].merlin_step_record.param_index
@@ -663,7 +661,7 @@ class MerlinStudy:
 
         # expand $(<step>.workspace) references in param_dag
         for node_name in list(param_dag.topological_sort()):
-            if node_name == "_source":
+            if node_name == SOURCE_NODE:
                 continue
 
             node_cmd = param_dag.values[node_name].get_cmd()

@@ -33,7 +33,7 @@ Holds DAG class. TODO make this an interface, separate from Maestro.
 """
 from collections import OrderedDict
 
-from merlin.study.step import Step, MerlinStepRecord
+from merlin.study.step import MerlinStepRecord, Step
 
 
 class DAG:
@@ -55,10 +55,10 @@ class DAG:
         :param `task_name`: The task name.
         :return: A Merlin Step object.
         """
-        #step_dict = self.dag.values[task_name]
-        #workspace_value = ""
-        #merlin_step_record = MerlinStepRecord(workspace_value, step_dict)
-        #return Step(merlin_step_record) # TODO is this okay?
+        # step_dict = self.dag.values[task_name]
+        # workspace_value = ""
+        # merlin_step_record = MerlinStepRecord(workspace_value, step_dict)
+        # return Step(merlin_step_record) # TODO is this okay?
         return self.dag.values[task_name]
 
     def calc_depth(self, node, depths, current_depth=0):

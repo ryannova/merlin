@@ -5,6 +5,7 @@ from enum import Enum
 
 from maestrowf.interfaces.script import CancellationRecord, SubmissionRecord
 
+
 LOGGER = logging.getLogger(__name__)
 
 

@@ -120,8 +120,7 @@ class MerlinSpec:
         result.path = None
         result.description = spec.pop("description", {})
         result.environment = spec.pop(
-            "env",
-            {"variables": {}, "sources": [], "labels": {}, "dependencies": {}},
+            "env", {"variables": {}, "sources": [], "labels": {}, "dependencies": {}},
         )
         result.globals = spec.pop("global.parameters", {})
         result.study = spec.pop("study", [])

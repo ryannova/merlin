@@ -28,22 +28,23 @@
 # SOFTWARE.
 ###############################################################################
 
-from enum import Enum
 import logging
 import re
 from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime
+from enum import Enum
 
 from maestrowf.datastructures.core.executiongraph import _StepRecord
 
 from merlin.common.abstracts.enums import ReturnCode
+from merlin.study.localscriptadapter import LocalScriptAdapter
 from merlin.study.script_adapter import MerlinScriptAdapter
 from merlin.utils import create_dirs
-from merlin.study.localscriptadapter import LocalScriptAdapter
 
 
 LOG = logging.getLogger(__name__)
+
 
 class State(Enum):
     INITIALIZED = 0
@@ -61,6 +62,7 @@ class State(Enum):
     CANCELLED = 12
     DRYRUN = 13
 
+
 def round_datetime_seconds(input_datetime):
     new_datetime = input_datetime
 
@@ -68,6 +70,7 @@ def round_datetime_seconds(input_datetime):
         new_datetime = new_datetime + datetime.timedelta(seconds=1)
 
     return new_datetime.replace(microsecond=0)
+
 
 class MerlinStepRecord:
     """
@@ -100,18 +103,18 @@ class MerlinStepRecord:
 
     def mark_submitted(self):
         """Mark the submission time of the record."""
-        #LOG.debug(
+        # LOG.debug(
         #    "Marking %s as submitted (PENDING) -- previously %s", self.name, self.status
-        #)
+        # )
         self.status = State.PENDING
         if not self._submit_time:
             self._submit_time = datetime.now()
         else:
-            #LOG.debug(
+            # LOG.debug(
             #    "Merlin: Cannot set the submission time of '%s' because it has "
             #    "already been set.",
             #    self.name,
-            #)
+            # )
             pass
 
     def setup_workspace(self):
@@ -136,13 +139,11 @@ class MerlinStepRecord:
 
     def _execute(self, adapter, script):
         if self.to_be_scheduled:
-            srecord = adapter.submit(
-                self.step, script, self.workspace.value)
+            srecord = adapter.submit(self.step, script, self.workspace.value)
         else:
             self.mark_running()
             ladapter = LocalScriptAdapter()
-            srecord = ladapter.submit(
-                self.step, script, self.workspace.value)
+            srecord = ladapter.submit(self.step, script, self.workspace.value)
 
         retcode = srecord.submission_code
         jobid = srecord.job_identifier
@@ -150,7 +151,7 @@ class MerlinStepRecord:
 
     def mark_submitted(self):
         """Mark the submission time of the record."""
-        #LOGGER.debug(
+        # LOGGER.debug(
         #    "Marking %s as submitted (PENDING) -- previously %s",
         #    self.name,
         #    self.status)
@@ -159,14 +160,14 @@ class MerlinStepRecord:
             self._submit_time = round_datetime_seconds(datetime.now())
         else:
             pass
-            #LOGGER.warning(
+            # LOGGER.warning(
             #    "Cannot set the submission time of '%s' because it has "
             #    "already been set.", self.name
-            #)
+            # )
 
     def mark_running(self):
         """Mark the start time of the record."""
-        #LOGGER.debug(
+        # LOGGER.debug(
         #    "Marking %s as running (RUNNING) -- previously %s",
         #    self.name,
         #    self.status)
@@ -180,7 +181,7 @@ class MerlinStepRecord:
 
         :param state: State enum corresponding to termination state.
         """
-        #LOGGER.debug(
+        # LOGGER.debug(
         #    "Marking %s as finished (%s) -- previously %s",
         #    self.name,
         #    state,
@@ -191,19 +192,19 @@ class MerlinStepRecord:
 
     def mark_restart(self):
         """Mark the end time of the record."""
-        #LOGGER.debug(
+        # LOGGER.debug(
         #    "Marking %s as restarting (TIMEOUT) -- previously %s",
         #    self.name,
         #    self.status)
         self.status = State.TIMEDOUT
         # Designating a restart limit of zero as an unlimited restart setting.
         # Otherwise, if we're less than restart limit, attempt another restart.
-        if self.restart_limit == 0 or \
-                self._num_restarts < self.restart_limit:
+        if self.restart_limit == 0 or self._num_restarts < self.restart_limit:
             self._num_restarts += 1
             return True
         else:
             return False
+
 
 class Step:
     """
@@ -313,13 +314,13 @@ class Step:
             if f"$({param_name})" in self.get_cmd():
                 return True
         return False
-        
+
     def expand_global_params(self, params):
         """
         Return a list of parameterized copies of this step.
         """
         if params is None or len(params) == 0:
-        #if (params is None or len(params) == 0) or (not self.contains_global_params(params)):
+            # if (params is None or len(params) == 0) or (not self.contains_global_params(params)):
             return None
 
         print(f"***NAME: {self['name']}")
@@ -334,8 +335,10 @@ class Step:
             new_step_name = self["name"] + "/"
             for param_name, param in params.items():
                 param_vals = param["values"]
-                param_label = param["label"] 
-                new_step["run"]["cmd"] = new_step.get_cmd().replace(f"$({param_name})", str(param_vals[num]))
+                param_label = param["label"]
+                new_step["run"]["cmd"] = new_step.get_cmd().replace(
+                    f"$({param_name})", str(param_vals[num])
+                )
                 if new_step_name != self["name"] + "/":
                     new_step_name += "."
                 new_step_name += param_label.replace("%%", str(param_vals[num]))
@@ -348,7 +351,12 @@ class Step:
         :return : True if the cmd has any of the default keywords or spec
             specified sample column labels.
         """
-        merlin_step_keywords = ["MERLIN_SAMPLE_ID", "MERLIN_SAMPLE_PATH", "merlin_sample_id", "merlin_sample_path"]
+        merlin_step_keywords = [
+            "MERLIN_SAMPLE_ID",
+            "MERLIN_SAMPLE_PATH",
+            "merlin_sample_id",
+            "merlin_sample_path",
+        ]
 
         needs_expansion = False
 
@@ -393,7 +401,7 @@ class Step:
         print("***ADAPTER CONFIG")
         print(adapter_config)
         if "shell" not in adapter_config:
-            adapter_config["shell"] = "/bin/bash" #TODO is this okay?
+            adapter_config["shell"] = "/bin/bash"  # TODO is this okay?
         default_shell = adapter_config.pop("shell")
         shell = self["run"].pop("shell", default_shell)
         adapter_config.update({"shell": shell})
@@ -418,9 +426,9 @@ class Step:
 
         self.merlin_step_record.setup_workspace()
         # self.merlin_step_record.generate_script(adapter) TODO make sure all substitutions are taken care of beforehand
-        #print(self.merlin_step_record.step)
-        #import sys
-        #sys.exit()
+        # print(self.merlin_step_record.step)
+        # import sys
+        # sys.exit()
         step_name = self.name()
         step_dir = self.get_workspace()
 

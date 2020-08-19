@@ -1,6 +1,7 @@
-from collections import OrderedDict
 import logging
 import re
+from collections import OrderedDict
+
 
 LOG = logging.getLogger(__name__)
 
@@ -63,10 +64,11 @@ class ParameterGenerator:
             self.length = len(values)
 
         elif len(values) != self.length:
-            error = "Length of values list must be the same size as " \
-                    "the other parameters that exist in the " \
-                    "generators. Length of '{}' is {}. Aborting." \
-                    .format(name, len(values))
+            error = (
+                "Length of values list must be the same size as "
+                "the other parameters that exist in the "
+                "generators. Length of '{}' is {}. Aborting.".format(name, len(values))
+            )
             LOG.exception(error)
             raise ValueError(error)
 
@@ -96,8 +98,7 @@ class ParameterGenerator:
                 if isinstance(self.labels[key], list):
                     tlabel = self.labels[key][i]
                 else:
-                    tlabel = self.labels[key].replace(self.label_token,
-                                                      str(pvalue))
+                    tlabel = self.labels[key].replace(self.label_token, str(pvalue))
                 name = self.names[key]
                 combo.add(key, name, pvalue, tlabel)
             yield combo
@@ -120,8 +121,10 @@ class ParameterGenerator:
             for each in item.values():
                 self._get_used_parameters(each, params)
         else:
-            msg = "Encountered an object of type '{}'. Expected a str, list," \
-                  " int, or dict.".format(type(item))
+            msg = (
+                "Encountered an object of type '{}'. Expected a str, list,"
+                " int, or dict.".format(type(item))
+            )
             LOG.error(msg)
             raise ValueError(msg)
 

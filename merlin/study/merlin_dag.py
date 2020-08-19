@@ -1,6 +1,6 @@
-from copy import deepcopy
 import logging
 import random
+from copy import deepcopy
 
 import networkx as nx
 
@@ -12,6 +12,7 @@ class ValueDAG(nx.DiGraph):
     """
     A displayable DAG that stores values corresponding to each node name. 
     """
+
     def __init__(self):
         super(ValueDAG, self).__init__()
         self.values = {}
@@ -36,7 +37,7 @@ class ValueDAG(nx.DiGraph):
 
     def remove_node(self, node):
         self.values.pop(node)
-        #self.node_ids.pop(node)
+        # self.node_ids.pop(node)
         super().remove_node(node)
 
     def add_edge(self, src, dest):
@@ -119,7 +120,7 @@ class ValueDAG(nx.DiGraph):
         return not nx.is_directed_acyclic_graph(self)
 
     def get_ancestor_nodes(self, node):
-        result = nx.dfs_tree(self.reverse(), source=node).reverse()  
+        result = nx.dfs_tree(self.reverse(), source=node).reverse()
         result.remove_node(node)
         return result
 
@@ -154,7 +155,7 @@ class ValueDAG(nx.DiGraph):
         pos_dict = {}
         for node in list(reversed(list(self.topological_sort()))):
             if node == "_source":
-                pos_dict[node] = (0,0)
+                pos_dict[node] = (0, 0)
                 continue
             tier = self.get_tier(node)
             n_nodes = node_count[tier]
@@ -162,18 +163,17 @@ class ValueDAG(nx.DiGraph):
             x = horiz_space_used[tier] - ((n_nodes - 1) * horiz_space / 2)
             horiz_space_used[tier] = horiz_space_used[tier] + horiz_space
             y = (self.get_tier(node) - 1) * tier_space * -1
-            pos_dict[node] = (x,y)
+            pos_dict[node] = (x, y)
 
         display_dag = self
         # copy this DAG, but without the '_source' node
-        if hide_src: 
+        if hide_src:
             if "_source" in self.nodes:
                 no_source = deepcopy(self)
                 no_source.remove_node("_source")
                 pos_dict.pop("_source")
                 display_dag = no_source
 
-        #nx.draw(self, with_labels=True, layout=nx.spring_layout(self, seed=1))
+        # nx.draw(self, with_labels=True, layout=nx.spring_layout(self, seed=1))
         nx.draw(display_dag, pos_dict, with_labels=True)
         plt.show()
-

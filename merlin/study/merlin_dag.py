@@ -1,5 +1,3 @@
-"""Module that contains the implementation of a Directed-Acyclic Graph."""
-
 from copy import deepcopy
 import logging
 import random
@@ -10,9 +8,12 @@ import networkx as nx
 LOG = logging.getLogger(__name__)
 
 
-class DAG(nx.DiGraph):
+class ValueDAG(nx.DiGraph):
+    """
+    A displayable DAG that stores values corresponding to each node name. 
+    """
     def __init__(self):
-        super(DAG, self).__init__()
+        super(ValueDAG, self).__init__()
         self.values = {}
         self.node_ids = {}
         self.curr_id = 0
@@ -127,8 +128,6 @@ class DAG(nx.DiGraph):
             raise ValueError("Node '_source' must be in DAG to measure node tier.")
         if node == "_source":
             return 0
-        #return nx.shortest_path_length(self, source="_source", target=node, method='dijkstra')
-        print(node)
         longest = max(nx.all_simple_paths(self, "_source", node), key=lambda x: len(x))
         return len(longest)
 
@@ -166,7 +165,8 @@ class DAG(nx.DiGraph):
             pos_dict[node] = (x,y)
 
         display_dag = self
-        if hide_src: # copy this DAG, but without the '_source' node
+        # copy this DAG, but without the '_source' node
+        if hide_src: 
             if "_source" in self.nodes:
                 no_source = deepcopy(self)
                 no_source.remove_node("_source")

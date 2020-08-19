@@ -39,13 +39,12 @@ from merlin.study.step import Step, MerlinStepRecord
 class DAG:
     """
     This class provides methods on a task graph that Merlin needs for staging
-    tasks in celery. The
-    major entry point is the group_tasks method, which provides groups of
-    independent chains of tasks.
+    tasks in celery. The major entry point is the group_tasks method, which
+    provides groups of independent chains of tasks.
     """
 
-    def __init__(self, merlin_dag, labels):
-        self.dag = merlin_dag
+    def __init__(self, value_dag, labels):
+        self.dag = value_dag
         self.backwards_adjacency = {}
         self.calc_backwards_adjacency()
         self.labels = labels

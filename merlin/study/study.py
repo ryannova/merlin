@@ -51,7 +51,7 @@ from merlin.spec.override import error_override_vars, replace_override_vars
 from merlin.spec.specification import MerlinSpec
 from merlin.study.dag import DAG
 from merlin.study.step import Step, MerlinStepRecord
-from merlin.study.merlin_dag import DAG as MerlinDAG
+from merlin.study.merlin_dag import ValueDAG
 from merlin.utils import (
     contains_shell_ref,
     contains_token,
@@ -559,7 +559,7 @@ class MerlinStudy:
     def stage(self):
         SOURCE_NODE = "_source"
 
-        basic_dag = MerlinDAG()
+        basic_dag = ValueDAG()
         step_dicts = list(self.expanded_spec.study)
 
         #TODO

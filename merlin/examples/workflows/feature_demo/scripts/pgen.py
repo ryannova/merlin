@@ -1,4 +1,4 @@
-from maestrowf.datastructures.core import ParameterGenerator
+from merlin.study.parameter_generator import ParameterGenerator
 
 
 def get_custom_generator(env, **kwargs):

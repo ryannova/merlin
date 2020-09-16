@@ -2,6 +2,7 @@
 import logging
 import os
 from enum import Enum
+from subprocess import Popen, PIPE
 
 from maestrowf.interfaces.script import CancellationRecord, SubmissionRecord
 
@@ -57,7 +58,9 @@ class LocalScriptAdapter:
         :param **kwargs: A dictionary with default settings for the adapter.
         """
         # LOGGER.debug("kwargs\n--------------------------\n%s", kwargs)
-        super(LocalScriptAdapter, self).__init__(**kwargs)
+        print(f"***KWARGS={kwargs}")
+        #super(LocalScriptAdapter, self).__init__(**kwargs)
+        self._exec = kwargs.pop("shell", "/bin/bash")
 
     def _write_script(self, ws_path, step):
         """

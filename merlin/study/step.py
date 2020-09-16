@@ -32,6 +32,7 @@ import logging
 import re
 from contextlib import suppress
 from copy import deepcopy
+from datetime import timedelta
 from datetime import datetime
 from enum import Enum
 
@@ -67,7 +68,7 @@ def round_datetime_seconds(input_datetime):
     new_datetime = input_datetime
 
     if new_datetime.microsecond >= 500000:
-        new_datetime = new_datetime + datetime.timedelta(seconds=1)
+        new_datetime = new_datetime + timedelta(seconds=1)
 
     return new_datetime.replace(microsecond=0)
 
@@ -139,11 +140,11 @@ class MerlinStepRecord:
 
     def _execute(self, adapter, script):
         if self.to_be_scheduled:
-            srecord = adapter.submit(self.step, script, self.workspace.value)
+            srecord = adapter.submit(self.step, script, self.workspace_value)
         else:
             self.mark_running()
             ladapter = LocalScriptAdapter()
-            srecord = ladapter.submit(self.step, script, self.workspace.value)
+            srecord = ladapter.submit(self.step, script, self.workspace_value)
 
         retcode = srecord.submission_code
         jobid = srecord.job_identifier

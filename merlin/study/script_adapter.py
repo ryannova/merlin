@@ -102,7 +102,7 @@ class MerlinLSFScriptAdapter(SlurmScriptAdapter):
         :returns: A string of the header based on internal batch parameters and
             the parameter step.
         """
-        return "#!{}".format(self._exec)
+        return f"#!{self._exec}"
 
     def get_parallelize_command(self, procs, nodes=None, **kwargs):
         """
@@ -144,7 +144,7 @@ class MerlinLSFScriptAdapter(SlurmScriptAdapter):
                 LOG.warning("'%s' is not supported -- ommitted.", key)
                 continue
             if value:
-                args += [self._cmd_flags[key], "{}".format(str(value))]
+                args += [self._cmd_flags[key], str(value)]
 
         return " ".join(args)
 
@@ -193,7 +193,7 @@ class MerlinSlurmScriptAdapter(SlurmScriptAdapter):
         :returns: A string of the header based on internal batch parameters and
             the parameter step.
         """
-        return "#!{}".format(self._exec)
+        return f"#!{self._exec)}"
 
     def time_format(self, val):
         """
@@ -234,12 +234,12 @@ class MerlinSlurmScriptAdapter(SlurmScriptAdapter):
             if key == "walltime":
                 args += [
                     self._cmd_flags[key],
-                    "{}".format(str(self.time_format(value))),
+                    str(self.time_format(value)),
                 ]
             elif "=" in self._cmd_flags[key]:
-                args += ["{0}{1}".format(self._cmd_flags[key], str(value))]
+                args += [f"{self._cmd_flags[key]}{str(value)}"]
             else:
-                args += [self._cmd_flags[key], "{}".format(str(value))]
+                args += [self._cmd_flags[key], str(value)]
 
         return " ".join(args)
 
@@ -448,7 +448,7 @@ class MerlinScriptAdapter(LocalScriptAdapter):
         # This allows us to save on iNodes by not writing the output,
         # or by appending error to output
         if output_name is not None:
-            o_path = os.path.join(cwd, "{}.out".format(new_output_name))
+            o_path = os.path.join(cwd, f"{new_output_name}.out")
 
             with open(o_path, "a") as out:
                 out.write(output)
@@ -458,7 +458,7 @@ class MerlinScriptAdapter(LocalScriptAdapter):
                     out.write(err)
 
             if not join_output:
-                e_path = os.path.join(cwd, "{}.err".format(new_output_name))
+                e_path = os.path.join(cwd, f"{new_output_name}.err")
                 with open(e_path, "a") as out:
                     out.write(err)
 

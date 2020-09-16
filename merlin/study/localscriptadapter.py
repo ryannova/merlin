@@ -82,17 +82,17 @@ class LocalScriptAdapter:
         restart = step.run["restart"]
         to_be_scheduled = False
 
-        fname = "{}.sh".format(step.name)
+        fname = f"{step.name}.sh"
         script_path = os.path.join(ws_path, fname)
         with open(script_path, "w") as script:
-            script.write("#!{0}\n\n{1}\n".format(self._exec, cmd))
+            script.write(f"#!{self._exec}\n\n{cmd}\n"
 
         if restart:
-            rname = "{}.restart.sh".format(step.name)
+            rname = f"{step.name}.restart.sh"
             restart_path = os.path.join(ws_path, rname)
 
             with open(restart_path, "w") as script:
-                script.write("#!{0}\n\n{1}\n".format(self._exec, restart))
+                script.write(f"#!{self._exec}\n\n{restart}\n")
         else:
             restart_path = None
 
@@ -141,8 +141,8 @@ class LocalScriptAdapter:
         output, err = p.communicate()
         retcode = p.wait()
 
-        o_path = os.path.join(cwd, "{}.{}.out".format(step.name, pid))
-        e_path = os.path.join(cwd, "{}.{}.err".format(step.name, pid))
+        o_path = os.path.join(cwd, f"{step.name}.{pid}.out")
+        e_path = os.path.join(cwd, f"{step.name}.{pid}.err")
 
         with open(o_path, "w") as out:
             out.write(output)

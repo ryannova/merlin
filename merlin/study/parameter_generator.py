@@ -14,11 +14,11 @@ class Combination(object):
         self._token = token
 
     def add(self, key, name, value, label):
-        var = "{}({})".format(self._token, key)
+        var = f"{self._token}({key})"
         self._params[var] = value
-        var = "{}({}.label)".format(self._token, key)
+        var = f"{self._token}({key}.label)"
         self._labels[var] = label
-        var = "{}({}.name)".format(self._token, key)
+        var = f"{self._token}({key}.name)"
         self._names[var] = name
 
     def __str__(self):
@@ -27,7 +27,7 @@ class Combination(object):
     def get_param_string(self, params):
         combo_str = []
         for item in sorted(params):
-            var = "{}({}.label)".format(self._token, item)
+            var = f"{self._token}({item}.label)"
             combo_str.append(self._labels[var])
 
         return ".".join(combo_str)
@@ -67,7 +67,7 @@ class ParameterGenerator:
             error = (
                 "Length of values list must be the same size as "
                 "the other parameters that exist in the "
-                "generators. Length of '{}' is {}. Aborting.".format(name, len(values))
+                f"generators. Length of '{name}' is {len(values)}. Aborting."
             )
             LOG.exception(error)
             raise ValueError(error)
@@ -75,7 +75,7 @@ class ParameterGenerator:
         if label:
             self.labels[key] = label
         else:
-            self.labels[key] = "{}.{}".format(key, self.label_token)
+            self.labels[key] = f"{key}.{self.label_token}"
 
         if name:
             self.names[key] = name
@@ -110,7 +110,7 @@ class ParameterGenerator:
             return
         elif isinstance(item, str):
             for key in self.parameters.keys():
-                _ = r"\{}\({}\.*\w*\)".format(self.token, key)
+                _ = fr"\{self.token}\({key}\.*\w*\)"
                 matches = re.findall(_, item)
                 if matches:
                     params.add(key)
@@ -122,8 +122,8 @@ class ParameterGenerator:
                 self._get_used_parameters(each, params)
         else:
             msg = (
-                "Encountered an object of type '{}'. Expected a str, list,"
-                " int, or dict.".format(type(item))
+                f"Encountered an object of type '{type(item)}'. Expected a str, list,"
+                " int, or dict."
             )
             LOG.error(msg)
             raise ValueError(msg)

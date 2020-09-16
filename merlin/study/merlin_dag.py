@@ -43,7 +43,7 @@ class ValueDAG(nx.DiGraph):
     def add_edge(self, src, dest):
         # Disallow loops to the same node.
         if src == dest:
-            msg = "Cannot add self-referring cycle edge ({}, {})".format(src, dest)
+            msg = f"Cannot add self-referring cycle edge ({src}, {dest})"
             LOG.error(msg)
             return
 

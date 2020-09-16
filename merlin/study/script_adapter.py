@@ -193,7 +193,7 @@ class MerlinSlurmScriptAdapter(SlurmScriptAdapter):
         :returns: A string of the header based on internal batch parameters and
             the parameter step.
         """
-        return f"#!{self._exec)}"
+        return f"#!{self._exec}"
 
     def time_format(self, val):
         """

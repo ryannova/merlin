@@ -39,6 +39,8 @@ def start_process(cmd, cwd=None, env=None, shell=True):
         kwargs["cwd"] = cwd
     if env is not None:
         kwargs["env"] = env
+    if cmd == "":
+        print("***CMD is empty string")
     return Popen(cmd, **kwargs)
 
 
@@ -85,7 +87,7 @@ class LocalScriptAdapter:
         fname = f"{step.name}.sh"
         script_path = os.path.join(ws_path, fname)
         with open(script_path, "w") as script:
-            script.write(f"#!{self._exec}\n\n{cmd}\n"
+            script.write(f"#!{self._exec}\n\n{cmd}\n")
 
         if restart:
             rname = f"{step.name}.restart.sh"
@@ -136,6 +138,8 @@ class LocalScriptAdapter:
         """
         LOGGER.debug("cwd = %s", cwd)
         LOGGER.debug("Script to execute: %s", path)
+        print(f"***cwd={cwd}")
+        print(f"***path={path}")
         p = start_process(path, shell=False, cwd=cwd, env=env)
         pid = p.pid
         output, err = p.communicate()

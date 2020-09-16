@@ -81,6 +81,7 @@ class MerlinStepRecord:
 
     def __init__(self, workspace_value, step, **kwargs):
         # _StepRecord.__init__(self, workspace, step, **kwargs)
+        print(f"***merlinsteprecord kwargs={kwargs}")
         self.workspace_value = workspace_value
         self.step = step
         self.param_index = -1

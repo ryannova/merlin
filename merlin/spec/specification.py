@@ -6,7 +6,7 @@
 #
 # LLNL-CODE-797170
 # All rights reserved.
-# This file is part of Merlin, Version: 1.7.4.
+# This file is part of Merlin, Version: 1.7.3.
 #
 # For details, see https://github.com/LLNL/merlin.
 #
@@ -38,7 +38,6 @@ import os
 from io import StringIO
 
 import yaml
-from maestrowf.datastructures import YAMLSpecification
 
 from merlin.spec import all_keys, defaults
 
@@ -46,13 +45,11 @@ from merlin.spec import all_keys, defaults
 LOG = logging.getLogger(__name__)
 
 
-class MerlinSpec(YAMLSpecification):
+class MerlinSpec:
     """
     This class represents the logic for parsing the Merlin yaml
     specification.
-
     Example spec_file contents:
-
     --spec_file.yaml--
     ...
     merlin:
@@ -66,7 +63,12 @@ class MerlinSpec(YAMLSpecification):
     """
 
     def __init__(self):
-        super(MerlinSpec, self).__init__()
+        self.path = ""
+        self.description = {}
+        self.environment = {}
+        self.batch = {}
+        self.study = []
+        self.globals = {}
 
     @property
     def yaml_sections(self):
@@ -98,20 +100,52 @@ class MerlinSpec(YAMLSpecification):
             "merlin": self.merlin,
         }
 
+    @property
+    def name(self):
+        return self.description["name"]
+
+    @property
+    def output_path(self):
+        if "variables" in self.environment:
+            if "OUTPUT_PATH" in self.environment["variables"]:
+                return self.environment["variables"]["OUTPUT_PATH"]
+        return ""
+
+    @classmethod
+    def load_specification_from_stream(cls, stream):
+        result = cls()
+        spec = yaml.safe_load(stream)
+        result.path = None
+        result.description = spec.pop("description", {})
+        result.environment = spec.pop(
+            "env", {"variables": {}, "sources": [], "labels": {}, "dependencies": {}},
+        )
+        result.globals = spec.pop("global.parameters", {})
+        result.study = spec.pop("study", [])
+        return result
+
     @classmethod
     def load_specification(cls, filepath, suppress_warning=True):
-        spec = super(MerlinSpec, cls).load_specification(filepath)
-        with open(filepath, "r") as f:
-            spec.merlin = MerlinSpec.load_merlin_block(f)
+        try:
+            with open(filepath, "r") as data:
+                spec = cls.load_specification_from_stream(data)
+                print(spec.study)
+            with open(filepath, "r") as data:
+                spec.merlin = MerlinSpec.load_merlin_block(data)
+        except Exception as e:
+            LOG.exception(e.args)
+            raise e
+        spec.path = filepath
         spec.specroot = os.path.dirname(spec.path)
         spec.process_spec_defaults()
         if not suppress_warning:
             spec.warn_unrecognized_keys()
+        LOG.info(f"Loaded specification '{os.path.basename(filepath)}'.")
         return spec
 
     @classmethod
     def load_spec_from_string(cls, string):
-        spec = super(MerlinSpec, cls).load_specification_from_stream(StringIO(string))
+        spec = cls.load_specification_from_stream(StringIO(string))
         spec.merlin = MerlinSpec.load_merlin_block(StringIO(string))
         spec.specroot = None
         spec.process_spec_defaults()
@@ -303,7 +337,7 @@ class MerlinSpec(YAMLSpecification):
 
     def get_task_queues(self):
         """Returns a dictionary of steps and their corresponding task queues."""
-        steps = self.get_study_steps()
+        steps = list(self.study)
         queues = {}
         for step in steps:
             if "task_queue" in step.run:
@@ -313,7 +347,6 @@ class MerlinSpec(YAMLSpecification):
     def get_queue_list(self, steps):
         """
         Return a sorted list of queues corresponding to spec steps
-
         param steps: a list of step names or 'all'
         """
         queues = self.get_task_queues()
@@ -336,7 +369,6 @@ class MerlinSpec(YAMLSpecification):
     def make_queue_string(self, steps):
         """
         Return a unique queue string for the steps
-
         param steps: a list of step names
         """
         return ",".join(set(self.get_queue_list(steps)))

@@ -1,0 +1,34 @@
+description:
+    name: dag2
+    description: |
+        s2 should expand into 3 parameterized steps.
+        s3 should be a bottleneck.
+        s4 should be a single step.
+global.parameters:
+    VAR:
+        values: ["A", "B", "C"]
+        label: VAR.%%
+
+study:
+    - name: s1
+      description: ""
+      run:
+          cmd: echo "s1"
+
+    - name: s2
+      description: ""
+      run:
+          cmd: echo $(VAR)
+          depends: [s1]
+
+    - name: s3
+      description: ""
+      run:
+          cmd: echo "s3"
+          depends: [s2_*]
+
+    - name: s4
+      description: ""
+      run:
+          cmd: echo "s4"
+          depends: [s3]

@@ -6,7 +6,7 @@
 #
 # LLNL-CODE-797170
 # All rights reserved.
-# This file is part of Merlin, Version: 1.7.4.
+# This file is part of Merlin, Version: 1.7.3.
 #
 # For details, see https://github.com/LLNL/merlin.
 #
@@ -30,6 +30,7 @@
 
 import logging
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -37,9 +38,6 @@ from contextlib import suppress
 from copy import deepcopy
 
 from cached_property import cached_property
-from maestrowf.datastructures.core import Study
-from maestrowf.maestro import load_parameter_generator
-from maestrowf.utils import create_dictionary
 
 from merlin.common.abstracts.enums import ReturnCode
 from merlin.spec import defaults
@@ -52,6 +50,8 @@ from merlin.spec.expansion import (
 from merlin.spec.override import error_override_vars, replace_override_vars
 from merlin.spec.specification import MerlinSpec
 from merlin.study.dag import DAG
+from merlin.study.merlin_dag import ValueDAG
+from merlin.study.step import MerlinStepRecord, Step
 from merlin.utils import (
     contains_shell_ref,
     contains_token,
@@ -66,7 +66,6 @@ LOG = logging.getLogger(__name__)
 class MerlinStudy:
     """
     Represents a Merlin study run on a specification. Used for 'merlin run'.
-
     :param `filepath`: path to the desired specification file.
     :param `override_vars`: Dictionary (keyword-variable name, value-variable
         value) to override in the spec.
@@ -190,7 +189,6 @@ class MerlinStudy:
     def samples(self):
         """
         Return this study's corresponding samples.
-
         :return: list of samples
         """
 
@@ -202,15 +200,12 @@ class MerlinStudy:
     def sample_labels(self):
         """
         Return this study's corresponding sample labels
-
         Example spec_file contents:
-
         --spec_file.yaml--
         ...
         merlin:
         samples:
             column_labels: [X0, X1]
-
         :return: list of labels (e.g. ["X0", "X1"] )
         """
         if self.expanded_spec.merlin["samples"]:
@@ -222,13 +217,10 @@ class MerlinStudy:
         load this study's samples from disk, generating if the file does
         not yet exist and the file is defined in the YAML file.
         (no generation will occur if file is defined via __init__)
-
         Runs the function defined in 'generate' and then loads up
         the sample files defined in 'file', assigning them to the
         variables in 'column_labels'
-
         Example spec_file contents:
-
         --spec_file.yaml--
         ...
         merlin:
@@ -237,7 +229,6 @@ class MerlinStudy:
                 cmd: python make_samples.py -outfile=samples.npy
             file: samples.npy
             column_labels: [X0, X1]
-
         :return: numpy samples
         :return: the samples loaded
         """
@@ -445,16 +436,13 @@ class MerlinStudy:
         """
         Runs the function defined in 'generate' if self.samples_file is not
         yet a file.
-
         Example spec_file contents:
-
         --spec_file.yaml--
         ...
         merlin:
         samples:
             generate:
                 cmd: python make_samples.py -outfile=samples.npy
-
         """
         try:
             if not os.path.exists(self.samples_file):
@@ -481,6 +469,7 @@ class MerlinStudy:
             LOG.error(f"Could not generate samples:\n{e}")
             return
 
+    """
     def load_pgen(self, filepath, pargs, env):
         if filepath:
             if pargs is None:
@@ -493,46 +482,45 @@ class MerlinStudy:
             for k, v in params.parameters.items():
                 result[k]["values"] = v
             return result
+    """
 
     def load_dag(self):
         """
         Generates a dag (a directed acyclic execution graph).
         Assigns it to `self.dag`.
         """
-        environment = self.expanded_spec.get_study_environment()
-        steps = self.expanded_spec.get_study_steps()
+        # environment = self.expanded_spec.get_study_environment()
+        # steps = self.expanded_spec.get_study_steps()
 
-        parameters = self.expanded_spec.get_parameters()
+        # parameters = self.expanded_spec.get_parameters()
 
         # Setup the study.
-        study = Study(
-            self.expanded_spec.name,
-            self.expanded_spec.description,
-            studyenv=environment,
-            parameters=parameters,
-            steps=steps,
-            out_path=self.workspace,
-        )
+        # study = Study(
+        #    self.expanded_spec.name,
+        #    self.expanded_spec.description,
+        #    studyenv=environment,
+        #    parameters=parameters,
+        #    steps=steps,
+        #    out_path=self.workspace,
+        # )
 
-        # Prepare the maestro study
-        if self.restart_dir is None:
-            study.setup_workspace()
-
-        study.setup_environment()
-        study.configure_study(
-            throttle=0,
-            submission_attempts=1,
-            restart_limit=0,
-            use_tmp=None,
-            hash_ws=None,
-        )
+        # study.setup_environment()
+        # study.configure_study(
+        #    throttle=0,
+        #    submission_attempts=1,
+        #    restart_limit=0,
+        #    use_tmp=None,
+        #    hash_ws=None,
+        # )
 
         # Generate the DAG
-        _, maestro_dag = study.stage()
+        # _, maestro_dag = study.stage()
+        merlin_dag = self.stage()
         labels = []
         if self.expanded_spec.merlin["samples"]:
             labels = self.expanded_spec.merlin["samples"]["column_labels"]
-        self.dag = DAG(maestro_dag, labels)
+        self.dag = DAG(merlin_dag, labels)  # TODO make this unnecessary!
+        # self.dag = DAG(maestro_dag, labels)
 
     def get_adapter_config(self, override_type=None):
         adapter_config = dict(self.expanded_spec.batch)
@@ -555,3 +543,184 @@ class MerlinStudy:
 
         LOG.debug(f"Adapter config = {adapter_config}")
         return adapter_config
+
+    def stage(self):
+        SOURCE_NODE = "_source"
+
+        basic_dag = ValueDAG()
+        step_dicts = list(self.expanded_spec.study)
+
+        # TODO
+        # @1. make basic step DAG including edges
+        # >2. make second DAG with parameterized names and edges
+
+        # add nodes to basic dag
+        for step_dict in step_dicts:
+            workspace_value = os.path.join(self.workspace, step_dict["name"])
+            step_obj = Step(MerlinStepRecord(workspace_value, step_dict))
+            basic_dag.add_node(step_dict["name"], step_obj)
+
+        # add edges to basic dag
+        for node in basic_dag.nodes:
+            step = basic_dag.values[node]
+            if "depends" not in step["run"]:
+                continue
+            name = step["name"]
+            for dep in step["run"]["depends"]:
+                if dep.endswith("_*"):
+                    dep = dep[:-2]
+                basic_dag.add_edge(dep, name)
+
+        basic_dag.add_node(SOURCE_NODE, None, node_id=-1)
+        for node in basic_dag.nodes:
+            if node == SOURCE_NODE:
+                continue
+            if len(basic_dag.in_edges(node)) == 0:
+                basic_dag.add_edge(SOURCE_NODE, node)
+
+        print(f"***BASIC_DAG: {basic_dag.node_ids}")
+
+        # if there are no global parameters, return the basic DAG.
+        if self.expanded_spec.globals is None or len(self.expanded_spec.globals) == 0:
+            return basic_dag
+
+        # expand paramaterized steps with param_dag
+        param_dag = deepcopy(basic_dag)
+        for node_name in list(param_dag.topological_sort()):
+            if node_name == SOURCE_NODE:
+                continue
+
+            # determine whether this step should be parameterized
+            has_params = param_dag.values[node_name].contains_global_params(
+                self.expanded_spec.globals
+            )
+
+            # TODO make sure this works, is robust, and put in the correct place
+            bottleneck_node = False
+            if "depends" in param_dag.values[node_name]["run"]:
+                for dep in param_dag.values[node_name]["run"]["depends"]:
+                    if not dep.endswith("_*"):
+                        continue
+                    bottleneck_node = True
+                    break
+            if bottleneck_node and not has_params:
+                continue
+
+            has_parameterized_parent = False
+            parents = list(basic_dag.predecessors(node_name))
+            for parent in parents:
+                if parent == SOURCE_NODE:
+                    continue
+                if basic_dag.values[parent].contains_global_params(
+                    self.expanded_spec.globals
+                ):
+                    has_parameterized_parent = True
+                    break
+
+            # if this step has parameters or parents with parameters
+            if has_params or has_parameterized_parent:
+                parameterized_steps = param_dag.values[node_name].expand_global_params(
+                    self.expanded_spec.globals
+                )
+                if parameterized_steps:
+                    print(f"len of parameterized steps: {len(parameterized_steps)}")
+                    parent_nodes = [x[0] for x in list(param_dag.in_edges(node_name))]
+                    child_nodes = [x[1] for x in list(param_dag.out_edges(node_name))]
+                    print(f"parents: {parent_nodes}")
+                    print(f"children: {child_nodes}")
+                    print(f"deleted node: {node_name}")
+                    node_id = basic_dag.node_ids[node_name]
+                    param_dag.remove_node(node_name)
+                    for (param_step, param_step_name) in parameterized_steps:
+                        print(f"parameterized name: {param_step_name}")
+                        param_step.merlin_step_record.workspace_value = os.path.join(
+                            self.workspace, param_step_name
+                        )
+                        print(f"***Adding {node_id} id to node {param_step_name}")
+                        param_dag.add_node(param_step_name, param_step, node_id=node_id)
+                        for parent_node in parent_nodes:
+                            print(parent_node)
+                            if parent_node == SOURCE_NODE:
+                                parent_param_index = -1
+                            else:
+                                parent_param_index = param_dag.values[
+                                    parent_node
+                                ].merlin_step_record.param_index
+                            node_param_index = param_dag.values[
+                                param_step_name
+                            ].merlin_step_record.param_index
+                            if (
+                                has_params
+                                or parent_param_index == -1
+                                or parent_param_index == node_param_index
+                            ):
+                                param_dag.add_edge(parent_node, param_step_name)
+                        for child_node in child_nodes:
+                            param_dag.add_edge(param_step_name, child_node)
+                else:
+                    print("ERROR does not have parameterized steps")
+
+        print("***PARAM DAG IDS")
+        print(param_dag.node_ids)
+
+        # expand $(<step>.workspace) references in param_dag
+        for node_name in list(param_dag.topological_sort()):
+            if node_name == SOURCE_NODE:
+                continue
+
+            node_cmd = param_dag.values[node_name].get_cmd()
+
+            if re.search(
+                r"\$\(\w+\.workspace\)", node_cmd
+            ):  # TODO make sure \w+ is correct for step names
+                print(node_name)
+                ancestors = param_dag.get_ancestor_nodes(node_name)
+                # print("ancestors: " + str(list(ancestors)))
+                ancestor_ids = [
+                    param_dag.node_ids[x]
+                    for x in param_dag.get_ancestor_nodes(node_name)
+                ]
+                # print("ancestor ids: " + str(list(ancestor_ids)))
+                workspace_node_names = re.findall(r"\$\(\w+\.workspace\)", node_cmd)
+                for workspace_name in workspace_node_names:
+                    # workspace_name = workspace_name.strip("$(").strip("\.workspace)")
+                    basic_workspace_name = re.findall("\w+\.", workspace_name)[0][:-1]
+                    # print(workspace_name)
+                    workspace_id = basic_dag.node_ids[basic_workspace_name]
+                    if workspace_id not in ancestor_ids:
+                        raise ValueError(
+                            f"Step '{node_name}' is referencing an incorrect step workspace!"
+                        )
+                    param_index = param_dag.values[
+                        node_name
+                    ].merlin_step_record.param_index
+                    for node in param_dag.nodes:
+                        if (
+                            param_dag.node_ids[node] == workspace_id
+                            and param_dag.values[node].merlin_step_record.param_index
+                            == param_index
+                        ):
+                            workspace_path = param_dag.values[
+                                node
+                            ].merlin_step_record.workspace_value
+                            break
+                    # print(f"{workspace_name} id: {workspace_id}")
+                    print(workspace_name)
+                    print(workspace_path)
+                    param_dag.values[node_name]["run"]["cmd"] = node_cmd.replace(
+                        workspace_name, workspace_path
+                    )
+                    node_cmd = param_dag.values[node_name].get_cmd()
+                    print("***NEW CMD:")
+                    print(param_dag.values[node_name]["run"]["cmd"])
+
+            # print(param_dag.values[node_name].get_cmd())
+            # print(param_dag.values[node_name].merlin_step_record.workspace_value)
+            # input()
+
+        param_dag.display()
+
+        # import sys
+        # sys.exit()
+
+        return param_dag

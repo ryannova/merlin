@@ -35,6 +35,7 @@ from copy import deepcopy
 from datetime import datetime
 
 from maestrowf.abstracts.enums import State
+from maestrowf.datastructures.environment import Variable
 from maestrowf.datastructures.core.executiongraph import _StepRecord
 from maestrowf.datastructures.core.study import StudyStep
 
@@ -45,14 +46,47 @@ from merlin.study.script_adapter import MerlinScriptAdapter
 LOG = logging.getLogger(__name__)
 
 
-class MerlinStepRecord(_StepRecord):
+class MerlinStepRecord:
     """
     This classs is a wrapper for the Maestro _StepRecord to remove 
     a re-submit message.
     """
 
     def __init__(self, workspace, step, **kwargs):
-        _StepRecord.__init__(self, workspace, step, **kwargs)
+        """
+        Initialize a new instance of a StepRecord.
+        Used kwargs:
+        workspace: The working directory of the record.
+        status: The record's current execution state.
+        jobid: A scheduler assigned job identifier.
+        script: The main script used for executing the record.
+        restart_script: Script to resume record execution (if applicable).
+        to_be_scheduled: True if the record needs scheduling. False otherwise.
+        step: The StudyStep that is represented by the record instance.
+        restart_limit: Upper limit on the number of restart attempts.
+        tmp_dir: A provided temp directory to write scripts to instead of step
+        workspace.
+        """
+        print(f"***benjstep={step}")
+        self.workspace = Variable("WORKSPACE", workspace)
+        #step["run"]["cmd"] = self.workspace.substitute(step["run"]["cmd"])
+        #step["run"]["restart"] = self.workspace.substitute(step["run"]["restart"])
+
+        self.jobid = kwargs.get("jobid", [])
+        self.script = kwargs.get("script", "")
+        self.restart_script = kwargs.get("restart", "")
+        self.to_be_scheduled = False
+        self.step = step
+        self.restart_limit = kwargs.get("restart_limit", 3)
+
+        # Status Information
+        self._num_restarts = 0
+        self._submit_time = None
+        self._start_time = None
+        self._end_time = None
+        self.status = kwargs.get("status", State.INITIALIZED)
+
+        #_StepRecord.__init__(self, workspace, step, **kwargs)
 
     def mark_submitted(self):
         """Mark the submission time of the record."""
@@ -68,6 +102,202 @@ class MerlinStepRecord(_StepRecord):
                 "already been set.",
                 self.name,
             )
+
+    def setup_workspace(self):
+        """Initialize the record's workspace."""
+        create_parentdir(self.workspace.value)
+
+    def generate_script(self, adapter, tmp_dir=""):
+        """
+        Generate the script for executing the workflow step.
+        :param adapter: Instance of adapter to be used for script generation.
+        :param tmp_dir: If specified, place generated script in the specified
+        temp directory.
+        """
+        if tmp_dir:
+            scr_dir = tmp_dir
+        else:
+            scr_dir = self.workspace.value
+
+        self.step["cmd"] = self.workspace.substitute(self.step["cmd"])
+
+        LOGGER.info("Generating script for %s into %s", self.name, scr_dir)
+        self.to_be_scheduled, self.script, self.restart_script = \
+            adapter.write_script(scr_dir, self.step)
+        LOGGER.info("Script: %s\nRestart: %s\nScheduled?: %s",
+                    self.script, self.restart_script, self.to_be_scheduled)
+
+    def execute(self, adapter):
+        self.mark_submitted()
+        retcode, jobid = self._execute(adapter, self.script)
+
+        if retcode == SubmissionCode.OK:
+            self.jobid.append(jobid)
+
+        return retcode
+
+    def restart(self, adapter):
+        retcode, jobid = self._execute(adapter, self.restart_script)
+
+        if retcode == SubmissionCode.OK:
+            self.jobid.append(jobid)
+
+        return retcode
+
+    @property
+    def can_restart(self):
+        """
+        Get whether or not the record can be restarted.
+        :returns: True if the record has a restart command assigned to it.
+        """
+        if self.restart_script:
+            return True
+
+        return False
+
+    def _execute(self, adapter, script):
+        if self.to_be_scheduled:
+            srecord = adapter.submit(
+                self.step, script, self.workspace.value)
+        else:
+            self.mark_running()
+            ladapter = ScriptAdapterFactory.get_adapter("local")()
+            srecord = ladapter.submit(
+                self.step, script, self.workspace.value)
+
+        retcode = srecord.submission_code
+        jobid = srecord.job_identifier
+        return retcode, jobid
+
+    def mark_running(self):
+        """Mark the start time of the record."""
+        LOGGER.debug(
+            "Marking %s as running (RUNNING) -- previously %s",
+            self.name,
+            self.status)
+        self.status = State.RUNNING
+        if not self._start_time:
+            self._start_time = round_datetime_seconds(datetime.now())
+
+    def mark_end(self, state):
+        """
+        Mark the end time of the record with associated termination state.
+        :param state: State enum corresponding to termination state.
+        """
+        LOGGER.debug(
+            "Marking %s as finished (%s) -- previously %s",
+            self.name,
+            state,
+            self.status)
+        self.status = state
+        if not self._end_time:
+            self._end_time = round_datetime_seconds(datetime.now())
+
+    def mark_restart(self):
+        """Mark the end time of the record."""
+        LOGGER.debug(
+            "Marking %s as restarting (TIMEOUT) -- previously %s",
+            self.name,
+            self.status)
+        self.status = State.TIMEDOUT
+        # Designating a restart limit of zero as an unlimited restart setting.
+        # Otherwise, if we're less than restart limit, attempt another restart.
+        if self.restart_limit == 0 or \
+                self._num_restarts < self.restart_limit:
+            self._num_restarts += 1
+            return True
+        else:
+            return False
+
+    @property
+    def is_local_step(self):
+        """Return whether or not this step executes locally."""
+        return not self.to_be_scheduled
+
+    @property
+    def elapsed_time(self):
+        """Compute the elapsed time of the record (includes queue wait)."""
+        if self._submit_time and self._end_time:
+            # Return the total elapsed time.
+            return get_duration(self._end_time - self._submit_time)
+        elif self._submit_time and self.status == State.RUNNING:
+            # Return the current elapsed time.
+            return get_duration(datetime.now() - self._submit_time)
+        else:
+            return "--:--:--"
+
+    @property
+    def run_time(self):
+        """
+        Compute the run time of a record (includes restart queue time).
+        :returns: A string of the records's run time.
+        """
+        if self._start_time and self._end_time:
+            # If start and end time is set -- calculate run time.
+            return get_duration(self._end_time - self._start_time)
+        elif self._start_time and not self.status == State.RUNNING:
+            # If start time but no end time, calculate current duration.
+            return get_duration(datetime.now() - self._start_time)
+        else:
+            # Otherwise, return an uncalculated marker.
+            return "--:--:--"
+
+    @property
+    def name(self):
+        """
+        Get the name of the step represented by the record instance.
+        :returns: The name of the StudyStep contained within the record.
+        """
+        return self.step.real_name
+
+    @property
+    def walltime(self):
+        """
+        Get the requested wall time of the record instance.
+        :returns: A string representing the requested computing time.
+        """
+        return self.step["walltime"]
+
+    @property
+    def time_submitted(self):
+        """
+        Get the time the step started.
+        :returns: A formatted string of the date and time the step started.
+        """
+        if self._submit_time:
+            return str(self._submit_time)
+        else:
+            return "--"
+
+    @property
+    def time_start(self):
+        """
+        Get the time the step started.
+        :returns: A formatted string of the date and time the step started.
+        """
+        if self._start_time:
+            return str(self._start_time)
+        else:
+            return "--"
+
+    @property
+    def time_end(self):
+        """
+        Get the time the step ended.
+        :returns: A formatted string of the date and time the step ended.
+        """
+        if self._end_time:
+            return str(self._end_time)
+        else:
+            return "--"
+
+    @property
+    def restarts(self):
+        """
+        Get the number of restarts the step has executed.
+        :returns: An int representing the number of restarts.
+        """
+        return self._num_restarts
 
 
 class Step:
@@ -224,7 +454,7 @@ class Step:
 
         # Update shell if the task overrides the default value from the batch section
         default_shell = adapter_config.pop("shell")
-        shell = self.mstep.step.run.pop("shell", default_shell)
+        shell = self.mstep.step["run"].pop("shell", default_shell)
         adapter_config.update({"shell": shell})
 
         # Update batch type if the task overrides the default value from the batch section

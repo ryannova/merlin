@@ -552,11 +552,14 @@ class MerlinStudy:
 
         # TODO
         # @1. make basic step DAG including edges
-        # >2. make second DAG with parameterized names and edges
+        # @2. make second DAG with parameterized names and edges
+        # >3. Fix bugs
 
         # add nodes to basic dag
         for step_dict in step_dicts:
             workspace_value = os.path.join(self.workspace, step_dict["name"])
+            print(f"***workspace_value={workspace_value}")
+            print(f"***step dict={step_dict}")
             step_obj = Step(MerlinStepRecord(workspace_value, step_dict))
             basic_dag.add_node(step_dict["name"], step_obj)
 

@@ -71,6 +71,7 @@ class MerlinStepRecord:
         self.workspace = Variable("WORKSPACE", workspace)
         #step["run"]["cmd"] = self.workspace.substitute(step["run"]["cmd"])
         #step["run"]["restart"] = self.workspace.substitute(step["run"]["restart"])
+        self.param_index = -1
 
         self.jobid = kwargs.get("jobid", [])
         self.script = kwargs.get("script", "")
@@ -87,6 +88,9 @@ class MerlinStepRecord:
         self.status = kwargs.get("status", State.INITIALIZED)
 
         #_StepRecord.__init__(self, workspace, step, **kwargs)
+
+    def __getitem__(self, key):
+        return self.step[key]
 
     def mark_submitted(self):
         """Mark the submission time of the record."""
@@ -306,24 +310,29 @@ class Step:
     executed by calling execute.
     """
 
-    def __init__(self, maestro_step_record):
+    def __init__(self, merlin_step_record):
         """
         :param maestro_step_record: The StepRecord object.
         """
-        self.mstep = maestro_step_record
+        self.merlin_step_record = merlin_step_record
         self.restart = False
 
+    def __getitem__(self, key):
+        return self.merlin_step_record[key]
+            
     def get_cmd(self):
         """
         get the run command text body"
         """
-        return self.mstep.step.__dict__["run"]["cmd"]
+        return self.merlin_step_record.step["run"]["cmd"]
 
     def get_restart_cmd(self):
         """
         get the restart command text body, else return None"
         """
-        return self.mstep.step.__dict__["run"]["restart"]
+        if "restart" in self.merlin_step_record.step["run"]:
+            return self.merlin_step_record.step["run"]["restart"]
+        return None
 
     def clone_changing_workspace_and_cmd(
         self, new_cmd=None, cmd_replacement_pairs=None, new_workspace=None
@@ -338,7 +347,7 @@ class Step:
         :param new_workspace : (Optional) the workspace for the new step.
         """
         LOG.debug(f"clone called with new_workspace {new_workspace}")
-        step_dict = deepcopy(self.mstep.step.__dict__)
+        step_dict = deepcopy(self.merlin_step_record.step)
 
         if new_cmd is not None:
             step_dict["run"]["cmd"] = new_cmd
@@ -365,7 +374,7 @@ class Step:
 
     def get_task_queue(self):
         """ Retrieve the task queue for the Step."""
-        return self.get_task_queue_from_dict(self.mstep.step.__dict__)
+        return self.get_task_queue_from_dict(self.merlin_step_record.step)
 
     @staticmethod
     def get_task_queue_from_dict(step_dict):
@@ -382,7 +391,7 @@ class Step:
         """
         Returns the max number of retries for this step.
         """
-        return self.mstep.step.__dict__["run"]["max_retries"]
+        return self.merlin_step_record.step["run"]["max_retries"]
 
     def __get_restart(self):
         """
@@ -397,6 +406,46 @@ class Step:
         self.__restart = val
 
     restart = property(__get_restart, __set_restart)
+
+    def is_parameterized(self):
+        return self.merlin_step_record.param_index != -1
+
+    def contains_global_params(self, params):
+        for param_name, param in params.items():
+            if f"$({param_name})" in self.get_cmd():
+                return True
+        return False
+
+    def expand_global_params(self, params):
+        """
+        Return a list of parameterized copies of this step.
+        """
+        if params is None or len(params) == 0:
+            # if (params is None or len(params) == 0) or (not self.contains_global_params(params)):
+            return None
+
+        print(f"***NAME: {self['name']}")
+
+        expanded_steps = []
+        expanded_step_names = []
+        num_params = len(next(iter(params.values()))["values"])
+
+        for num in range(num_params):
+            new_step = deepcopy(self)
+            new_step.merlin_step_record.param_index = num
+            new_step_name = self["name"] + "/"
+            for param_name, param in params.items():
+                param_vals = param["values"]
+                param_label = param["label"]
+                new_step["run"]["cmd"] = new_step.get_cmd().replace(
+                    f"$({param_name})", str(param_vals[num])
+                )
+                if new_step_name != self["name"] + "/":
+                    new_step_name += "."
+                new_step_name += param_label.replace("%%", str(param_vals[num]))
+            expanded_steps.append(new_step)
+            expanded_step_names.append(new_step_name)
+        return list(zip(expanded_steps, expanded_step_names))
 
     def needs_merlin_expansion(self, labels):
         """
@@ -433,13 +482,13 @@ class Step:
         """
         :return : The workspace this step is to be executed in.
         """
-        return self.mstep.workspace.value
+        return self.merlin_step_record.workspace.value
 
     def name(self):
         """
         :return : The step name.
         """
-        return self.mstep.step.__dict__["name"]
+        return self.merlin_step_record.step["name"]
 
     def execute(self, adapter_config):
         """
@@ -454,7 +503,7 @@ class Step:
 
         # Update shell if the task overrides the default value from the batch section
         default_shell = adapter_config.pop("shell")
-        shell = self.mstep.step["run"].pop("shell", default_shell)
+        shell = self.merlin_step_record.step["run"].pop("shell", default_shell)
         adapter_config.update({"shell": shell})
 
         # Update batch type if the task overrides the default value from the batch section
@@ -462,7 +511,7 @@ class Step:
         # Set batch_type to default if unset
         adapter_config.update({"batch_type": default_batch_type})
         # Override the default batch: type: from the step config
-        batch = self.mstep.step.run.pop("batch", None)
+        batch = self.merlin_step_record.step.run.pop("batch", None)
         if batch:
             batch_type = batch.pop("type", default_batch_type)
             adapter_config.update({"batch_type": batch_type})
@@ -475,8 +524,8 @@ class Step:
         # Preserve the default batch type if the step batch type is different
         adapter_config.update({"batch_type": default_batch_type})
 
-        self.mstep.setup_workspace()
-        self.mstep.generate_script(adapter)
+        self.merlin_step_record.setup_workspace()
+        self.merlin_step_record.generate_script(adapter)
         step_name = self.name()
         step_dir = self.get_workspace()
 
@@ -496,6 +545,6 @@ class Step:
         # If the above is done, then merlin_step in tasks.py can be changed to
         # calls to the step execute and restart functions.
         if self.restart and self.get_restart_cmd():
-            return ReturnCode(self.mstep.restart(adapter))
+            return ReturnCode(self.merlin_step_record.restart(adapter))
         else:
-            return ReturnCode(self.mstep.execute(adapter))
+            return ReturnCode(self.merlin_step_record.execute(adapter))

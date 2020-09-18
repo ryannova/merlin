@@ -462,3 +462,14 @@ def contains_shell_ref(string):
     if re.search(r"\$\w+", string) or re.search(r"\$\{\w+\}", string):
         return True
     return False
+
+
+def create_parentdir(path):
+    """
+    Recursively create parent directories.
+
+    :param path: Path to a directory to be created.
+    """
+    if not os.path.exists(path):
+        path = os.path.expanduser(path)
+        os.makedirs(path)

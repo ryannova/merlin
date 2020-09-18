@@ -40,6 +40,7 @@ from maestrowf.datastructures.core.executiongraph import _StepRecord
 from maestrowf.datastructures.core.study import StudyStep
 import numpy as np
 
+from merlin.utils import create_parentdir
 from merlin.common.abstracts.enums import ReturnCode
 from merlin.study.script_adapter import MerlinScriptAdapter
 
@@ -89,6 +90,10 @@ class MerlinStepRecord:
         self._end_time = None
         self.status = kwargs.get("status", State.INITIALIZED)
 
+        print("***step")
+        print(self.step)
+        print("***script")
+        print(self.script)
         #_StepRecord.__init__(self, workspace, step, **kwargs)
 
     def __getitem__(self, key):
@@ -125,12 +130,12 @@ class MerlinStepRecord:
         else:
             scr_dir = self.workspace.value
 
-        self.step["cmd"] = self.workspace.substitute(self.step["cmd"])
+        self.step["run"]["cmd"] = self.workspace.substitute(self.step["run"]["cmd"])
 
-        LOGGER.info("Generating script for %s into %s", self.name, scr_dir)
+        LOG.info("Generating script for %s into %s", self.name, scr_dir)
         self.to_be_scheduled, self.script, self.restart_script = \
             adapter.write_script(scr_dir, self.step)
-        LOGGER.info("Script: %s\nRestart: %s\nScheduled?: %s",
+        LOG.info("Script: %s\nRestart: %s\nScheduled?: %s",
                     self.script, self.restart_script, self.to_be_scheduled)
 
     def execute(self, adapter):
@@ -177,7 +182,7 @@ class MerlinStepRecord:
 
     def mark_running(self):
         """Mark the start time of the record."""
-        LOGGER.debug(
+        LOG.debug(
             "Marking %s as running (RUNNING) -- previously %s",
             self.name,
             self.status)
@@ -190,7 +195,7 @@ class MerlinStepRecord:
         Mark the end time of the record with associated termination state.
         :param state: State enum corresponding to termination state.
         """
-        LOGGER.debug(
+        LOG.debug(
             "Marking %s as finished (%s) -- previously %s",
             self.name,
             state,
@@ -201,7 +206,7 @@ class MerlinStepRecord:
 
     def mark_restart(self):
         """Mark the end time of the record."""
-        LOGGER.debug(
+        LOG.debug(
             "Marking %s as restarting (TIMEOUT) -- previously %s",
             self.name,
             self.status)
@@ -254,7 +259,7 @@ class MerlinStepRecord:
         Get the name of the step represented by the record instance.
         :returns: The name of the StudyStep contained within the record.
         """
-        return self.step.real_name
+        return self.step["name"] #TODO is this okay?
 
     @property
     def walltime(self):
@@ -262,7 +267,7 @@ class MerlinStepRecord:
         Get the requested wall time of the record instance.
         :returns: A string representing the requested computing time.
         """
-        return self.step["walltime"]
+        return self.step["run"]["walltime"]
 
     @property
     def time_submitted(self):
@@ -370,11 +375,12 @@ class Step:
         if new_workspace is None:
             new_workspace = self.get_workspace()
         LOG.debug(f"cloned step with workspace {new_workspace}")
-        study_step = StudyStep()
-        study_step.name = step_dict["name"]
-        study_step.description = step_dict["description"]
-        study_step.run = step_dict["run"]
-        return Step(MerlinStepRecord(new_workspace, study_step))
+        study_step = {"name":step_dict["name"], "description":step_dict["description"], "run": step_dict["run"]}
+        #study_step = StudyStep()
+        #study_step.name = step_dict["name"]
+        #study_step.description = step_dict["description"]
+        #study_step.run = step_dict["run"]
+        return Step(MerlinStepRecord(new_workspace, study_step)) #TODO is this okay???
 
     def get_task_queue(self):
         """ Retrieve the task queue for the Step."""
@@ -535,7 +541,7 @@ class Step:
         # Set batch_type to default if unset
         adapter_config.update({"batch_type": default_batch_type})
         # Override the default batch: type: from the step config
-        batch = self.merlin_step_record.step.run.pop("batch", None)
+        batch = self.merlin_step_record.step["run"].pop("batch", None)
         if batch:
             batch_type = batch.pop("type", default_batch_type)
             adapter_config.update({"batch_type": batch_type})

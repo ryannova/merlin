@@ -182,10 +182,10 @@ class MerlinDAG:
 
                     if self.num_children(task_name) == 1 and task_name != "_source":
 
-                        print("***self.children(task_name)")
-                        print(task_name)
-                        print(self.children)
-                        print(self.children(task_name))
+                        #print("***self.children(task_name)")
+                        #print(task_name)
+                        #print(self.children)
+                        #print(self.children(task_name))
                         child = self.children(task_name)[0]
 
                         if self.num_parents(child) == 1:

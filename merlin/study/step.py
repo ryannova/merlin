@@ -326,7 +326,7 @@ class Step:
         """
         get the run command text body"
         """
-        return self.merlin_step_record.step["run"]["cmd"]
+        return self.merlin_step_record["run"]["cmd"]
 
     def get_restart_cmd(self):
         """
@@ -359,7 +359,9 @@ class Step:
                 cmd = step_dict["run"]["cmd"]
                 step_dict["run"]["cmd"] = re.sub(re.escape(str1), str2, cmd, flags=re.I)
 
-                restart_cmd = step_dict["run"]["restart"]
+                restart_cmd = None
+                if "restart" in step_dict["run"]:
+                    restart_cmd = step_dict["run"]["restart"]
                 if restart_cmd:
                     step_dict["run"]["restart"] = re.sub(
                         re.escape(str1), str2, restart_cmd, flags=re.I

@@ -37,8 +37,8 @@ import time
 from contextlib import suppress
 from copy import deepcopy
 
-from cached_property import cached_property
 import numpy as np
+from cached_property import cached_property
 
 from merlin.common.abstracts.enums import ReturnCode
 from merlin.spec import defaults
@@ -50,8 +50,8 @@ from merlin.spec.expansion import (
 )
 from merlin.spec.override import error_override_vars, replace_override_vars
 from merlin.spec.specification import MerlinSpec
-from merlin.study.dag.dag_utils import stage
 from merlin.study.dag.dag import MerlinDAG
+from merlin.study.dag.dag_utils import stage
 from merlin.study.dag.merlin_dag import ValueDAG
 from merlin.study.step import MerlinStepRecord, Step
 from merlin.utils import (

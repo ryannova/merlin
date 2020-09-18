@@ -68,11 +68,12 @@ class MerlinStepRecord:
         tmp_dir: A provided temp directory to write scripts to instead of step
         workspace.
         """
-        print(f"***benjstep={step}")
+        #print(f"***benjstep={step}")
         self.workspace = Variable("WORKSPACE", workspace)
         #step["run"]["cmd"] = self.workspace.substitute(step["run"]["cmd"])
         #step["run"]["restart"] = self.workspace.substitute(step["run"]["restart"])
-        self.param_index_vector = -1
+        self.param_vector = None
+        self.param_index = -1
 
         self.jobid = kwargs.get("jobid", [])
         self.script = kwargs.get("script", "")
@@ -409,7 +410,7 @@ class Step:
     restart = property(__get_restart, __set_restart)
 
     def is_parameterized(self):
-        return self.merlin_step_record.param_index_vector != -1
+        return self.merlin_step_record.param_vector is not None
 
     def contains_global_params(self, params):
         for param_name, param in params.items():
@@ -430,26 +431,32 @@ class Step:
                 result.append(False)
         return result
 
-    def expand_global_params(self, params):
+    def expand_global_params(self, params, param_mask):
         """
         Return a list of parameterized copies of this step.
         """
-        if params is None or len(params) == 0:
-            # if (params is None or len(params) == 0) or (not self.contains_global_params(params)):
+        if params is None or len(params) == 0 or (True not in param_mask):
             return None
 
-        print(f"***NAME: {self['name']}")
+        #print(f"***NAME: {self['name']}")
 
         expanded_steps = []
         expanded_step_names = []
         num_param_vals = len(next(iter(params.values()))["values"])
-        print(f"***num_param_vals={num_param_vals}")
+        #print(f"***num_param_vals={num_param_vals}")
+
+        masked_params = deepcopy(params)
+        for i, (k,v) in enumerate(params.items()):
+            if not param_mask[i]:
+                del masked_params[k]
 
         for num in range(num_param_vals):
             new_step = deepcopy(self)
-            new_step.merlin_step_record.param_index_vector = np.array([])
+            new_step.merlin_step_record.param_val_index = num
             new_step_name = self["name"] + "/"
             for param_name, param in params.items():
+                if param_name not in masked_params:
+                    continue
                 param_vals = param["values"]
                 param_label = param["label"]
                 new_step["run"]["cmd"] = new_step.get_cmd().replace(

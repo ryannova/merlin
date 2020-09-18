@@ -49,7 +49,7 @@ from merlin.spec.expansion import (
 )
 from merlin.spec.override import error_override_vars, replace_override_vars
 from merlin.spec.specification import MerlinSpec
-from merlin.study.dag import DAG
+from merlin.study.dag import MerlinDAG
 from merlin.study.merlin_dag import ValueDAG
 from merlin.study.step import MerlinStepRecord, Step
 from merlin.utils import (
@@ -519,8 +519,7 @@ class MerlinStudy:
         labels = []
         if self.expanded_spec.merlin["samples"]:
             labels = self.expanded_spec.merlin["samples"]["column_labels"]
-        self.dag = DAG(merlin_dag, labels)  # TODO make this unnecessary!
-        # self.dag = DAG(maestro_dag, labels)
+        self.dag = MerlinDAG(merlin_dag, labels)
 
     def get_adapter_config(self, override_type=None):
         adapter_config = dict(self.expanded_spec.batch)

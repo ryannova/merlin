@@ -33,7 +33,7 @@ from collections import OrderedDict
 from merlin.study.step import MerlinStepRecord, Step
 
 
-class DAG:
+class MerlinDAG:
     """
     This class provides methods on a task graph that Merlin needs for staging
     tasks in celery. The major entry point is the group_tasks method, which

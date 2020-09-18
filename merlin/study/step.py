@@ -37,7 +37,6 @@ from datetime import datetime
 from maestrowf.abstracts.enums import State
 from maestrowf.datastructures.environment import Variable
 from maestrowf.datastructures.core.executiongraph import _StepRecord
-from maestrowf.datastructures.core.study import StudyStep
 import numpy as np
 
 from merlin.utils import create_parentdir

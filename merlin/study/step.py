@@ -38,6 +38,7 @@ from maestrowf.abstracts.enums import State
 from maestrowf.datastructures.environment import Variable
 from maestrowf.datastructures.core.executiongraph import _StepRecord
 from maestrowf.datastructures.core.study import StudyStep
+import numpy as np
 
 from merlin.common.abstracts.enums import ReturnCode
 from merlin.study.script_adapter import MerlinScriptAdapter
@@ -71,7 +72,7 @@ class MerlinStepRecord:
         self.workspace = Variable("WORKSPACE", workspace)
         #step["run"]["cmd"] = self.workspace.substitute(step["run"]["cmd"])
         #step["run"]["restart"] = self.workspace.substitute(step["run"]["restart"])
-        self.param_index = -1
+        self.param_index_vector = -1
 
         self.jobid = kwargs.get("jobid", [])
         self.script = kwargs.get("script", "")
@@ -408,13 +409,26 @@ class Step:
     restart = property(__get_restart, __set_restart)
 
     def is_parameterized(self):
-        return self.merlin_step_record.param_index != -1
+        return self.merlin_step_record.param_index_vector != -1
 
     def contains_global_params(self, params):
         for param_name, param in params.items():
             if f"$({param_name})" in self.get_cmd():
                 return True
         return False
+
+    def get_global_param_vector(self, params):
+        """
+        For each global parameter, return False for no match,
+        and True for match.
+        """
+        result = []
+        for param_name, param in params.items():
+            if f"$({param_name})" in self.get_cmd():
+                result.append(True)
+            else:
+                result.append(False)
+        return result
 
     def expand_global_params(self, params):
         """
@@ -428,11 +442,12 @@ class Step:
 
         expanded_steps = []
         expanded_step_names = []
-        num_params = len(next(iter(params.values()))["values"])
+        num_param_vals = len(next(iter(params.values()))["values"])
+        print(f"***num_param_vals={num_param_vals}")
 
-        for num in range(num_params):
+        for num in range(num_param_vals):
             new_step = deepcopy(self)
-            new_step.merlin_step_record.param_index = num
+            new_step.merlin_step_record.param_index_vector = np.array([])
             new_step_name = self["name"] + "/"
             for param_name, param in params.items():
                 param_vals = param["values"]

@@ -1,3 +1,13 @@
+from merlin.study.dag.merlin_dag import ValueDAG
+from merlin.study.step import MerlinStepRecord, Step
+import os
+from copy import deepcopy
+import numpy as np
+import re
+
+
+SOURCE_NODE = "_source"
+
 def populate_basic_dag(study):
     basic_dag = ValueDAG()
     step_dicts = list(study.expanded_spec.study)
@@ -125,7 +135,7 @@ def expand_parameterized_steps(study, basic_dag):
                 print("ERROR does not have parameterized steps")
     return param_dag
 
-def expand_workspace_references(study, basic_dag, param_dag):
+def expand_workspace_references(basic_dag, param_dag):
     result_dag = deepcopy(param_dag)
     for node_name in list(result_dag.topological_sort()):
         if node_name == SOURCE_NODE:
@@ -188,7 +198,7 @@ def stage(study):
     # @2. make second DAG with parameterized names and edges
     # >3. Fix bugs
 
-    basic_dag = study.populate_basic_dag()
+    basic_dag = populate_basic_dag(study)
     #print(f"***BASIC_DAG: {basic_dag.node_ids}")
     # if there are no global parameters, return the basic DAG.
     if study.expanded_spec.globals is None or len(study.expanded_spec.globals) == 0:
@@ -197,7 +207,7 @@ def stage(study):
     basic_dag.display()
 
     # expand paramaterized steps with param_dag
-    param_dag = study.expand_parameterized_steps(basic_dag)
+    param_dag = expand_parameterized_steps(study, basic_dag)
     #print(f"***PARAM DAG IDS={param_dag.node_ids}")
 
     param_dag.display()
@@ -205,7 +215,7 @@ def stage(study):
     #sys.exit()
 
     # expand $(<step>.workspace) references in param_dag
-    expanded_workspace_dag = study.expand_workspace_references(basic_dag, param_dag)
+    expanded_workspace_dag = expand_workspace_references(basic_dag, param_dag)
 
     #for node in expanded_workspace_dag:
         #print(node)

@@ -35,11 +35,11 @@ Merlin script adapter module
 import logging
 import os
 
-from maestrowf.interfaces.script import SubmissionRecord
+from merlin.study.records import SubmissionRecord
 from maestrowf.interfaces.script.localscriptadapter import LocalScriptAdapter
 from maestrowf.interfaces.script.slurmscriptadapter import SlurmScriptAdapter
-from maestrowf.utils import start_process
 
+from merlin.utils import start_process
 from merlin.common.abstracts.enums import ReturnCode
 
 

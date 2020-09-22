@@ -57,6 +57,7 @@ if total_time > 1440:
     total_time = 1440
 if total_time < 180:
     total_time = 180
+total_time = 1440  # TODO remove this
 
 output_path = os.path.join(args.output_path, f"run_{args.run_id}")
 os.makedirs(output_path, exist_ok=True)

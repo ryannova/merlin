@@ -38,9 +38,9 @@ from merlin.study.enums import State, SubmissionCode
 from merlin.study.variable import Variable
 import numpy as np
 
-from merlin.utils import create_parentdir
 from merlin.common.abstracts.enums import ReturnCode
 from merlin.study.script_adapter import MerlinScriptAdapter
+from merlin.utils import create_parentdir
 
 
 LOG = logging.getLogger(__name__)
@@ -67,10 +67,10 @@ class MerlinStepRecord:
         tmp_dir: A provided temp directory to write scripts to instead of step
         workspace.
         """
-        #print(f"***benjstep={step}")
+        # print(f"***benjstep={step}")
         self.workspace = Variable("WORKSPACE", workspace)
-        #step["run"]["cmd"] = self.workspace.substitute(step["run"]["cmd"])
-        #step["run"]["restart"] = self.workspace.substitute(step["run"]["restart"])
+        # step["run"]["cmd"] = self.workspace.substitute(step["run"]["cmd"])
+        # step["run"]["restart"] = self.workspace.substitute(step["run"]["restart"])
         self.param_vector = None
         self.param_index = -1
 
@@ -92,7 +92,7 @@ class MerlinStepRecord:
         print(self.step)
         print("***script")
         print(self.script)
-        #_StepRecord.__init__(self, workspace, step, **kwargs)
+        # _StepRecord.__init__(self, workspace, step, **kwargs)
 
     def __getitem__(self, key):
         return self.step[key]
@@ -131,10 +131,15 @@ class MerlinStepRecord:
         self.step["run"]["cmd"] = self.workspace.substitute(self.step["run"]["cmd"])
 
         LOG.info("Generating script for %s into %s", self.name, scr_dir)
-        self.to_be_scheduled, self.script, self.restart_script = \
-            adapter.write_script(scr_dir, self.step)
-        LOG.info("Script: %s\nRestart: %s\nScheduled?: %s",
-                    self.script, self.restart_script, self.to_be_scheduled)
+        self.to_be_scheduled, self.script, self.restart_script = adapter.write_script(
+            scr_dir, self.step
+        )
+        LOG.info(
+            "Script: %s\nRestart: %s\nScheduled?: %s",
+            self.script,
+            self.restart_script,
+            self.to_be_scheduled,
+        )
 
     def execute(self, adapter):
         self.mark_submitted()
@@ -166,13 +171,11 @@ class MerlinStepRecord:
 
     def _execute(self, adapter, script):
         if self.to_be_scheduled:
-            srecord = adapter.submit(
-                self.step, script, self.workspace.value)
+            srecord = adapter.submit(self.step, script, self.workspace.value)
         else:
             self.mark_running()
             ladapter = ScriptAdapterFactory.get_adapter("local")()
-            srecord = ladapter.submit(
-                self.step, script, self.workspace.value)
+            srecord = ladapter.submit(self.step, script, self.workspace.value)
 
         retcode = srecord.submission_code
         jobid = srecord.job_identifier
@@ -181,9 +184,8 @@ class MerlinStepRecord:
     def mark_running(self):
         """Mark the start time of the record."""
         LOG.debug(
-            "Marking %s as running (RUNNING) -- previously %s",
-            self.name,
-            self.status)
+            "Marking %s as running (RUNNING) -- previously %s", self.name, self.status
+        )
         self.status = State.RUNNING
         if not self._start_time:
             self._start_time = round_datetime_seconds(datetime.now())
@@ -197,7 +199,8 @@ class MerlinStepRecord:
             "Marking %s as finished (%s) -- previously %s",
             self.name,
             state,
-            self.status)
+            self.status,
+        )
         self.status = state
         if not self._end_time:
             self._end_time = round_datetime_seconds(datetime.now())
@@ -207,12 +210,12 @@ class MerlinStepRecord:
         LOG.debug(
             "Marking %s as restarting (TIMEOUT) -- previously %s",
             self.name,
-            self.status)
+            self.status,
+        )
         self.status = State.TIMEDOUT
         # Designating a restart limit of zero as an unlimited restart setting.
         # Otherwise, if we're less than restart limit, attempt another restart.
-        if self.restart_limit == 0 or \
-                self._num_restarts < self.restart_limit:
+        if self.restart_limit == 0 or self._num_restarts < self.restart_limit:
             self._num_restarts += 1
             return True
         else:
@@ -257,7 +260,7 @@ class MerlinStepRecord:
         Get the name of the step represented by the record instance.
         :returns: The name of the StudyStep contained within the record.
         """
-        return self.step["name"] #TODO is this okay?
+        return self.step["name"]  # TODO is this okay?
 
     @property
     def walltime(self):
@@ -324,7 +327,7 @@ class Step:
 
     def __getitem__(self, key):
         return self.merlin_step_record[key]
-            
+
     def get_cmd(self):
         """
         get the run command text body"
@@ -373,12 +376,16 @@ class Step:
         if new_workspace is None:
             new_workspace = self.get_workspace()
         LOG.debug(f"cloned step with workspace {new_workspace}")
-        study_step = {"name":step_dict["name"], "description":step_dict["description"], "run": step_dict["run"]}
-        #study_step = StudyStep()
-        #study_step.name = step_dict["name"]
-        #study_step.description = step_dict["description"]
-        #study_step.run = step_dict["run"]
-        return Step(MerlinStepRecord(new_workspace, study_step)) #TODO is this okay???
+        study_step = {
+            "name": step_dict["name"],
+            "description": step_dict["description"],
+            "run": step_dict["run"],
+        }
+        # study_step = StudyStep()
+        # study_step.name = step_dict["name"]
+        # study_step.description = step_dict["description"]
+        # study_step.run = step_dict["run"]
+        return Step(MerlinStepRecord(new_workspace, study_step))  # TODO is this okay???
 
     def get_task_queue(self):
         """ Retrieve the task queue for the Step."""
@@ -444,15 +451,15 @@ class Step:
         if params is None or len(params) == 0 or (True not in param_mask):
             return None
 
-        #print(f"***NAME: {self['name']}")
+        # print(f"***NAME: {self['name']}")
 
         expanded_steps = []
         expanded_step_names = []
         num_param_vals = len(next(iter(params.values()))["values"])
-        #print(f"***num_param_vals={num_param_vals}")
+        # print(f"***num_param_vals={num_param_vals}")
 
         masked_params = deepcopy(params)
-        for i, (k,v) in enumerate(params.items()):
+        for i, (k, v) in enumerate(params.items()):
             if not param_mask[i]:
                 del masked_params[k]
 

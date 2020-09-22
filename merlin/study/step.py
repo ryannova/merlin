@@ -36,7 +36,6 @@ from datetime import datetime
 
 from merlin.study.enums import State, SubmissionCode
 from merlin.study.variable import Variable
-#from maestrowf.datastructures.core.executiongraph import _StepRecord
 import numpy as np
 
 from merlin.utils import create_parentdir

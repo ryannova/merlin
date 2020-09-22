@@ -39,7 +39,7 @@ from merlin.study.schedulerscriptadapter import SchedulerScriptAdapter
 from merlin.utils import start_process
 
 
-LOGGER = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 class SlurmScriptAdapter(SchedulerScriptAdapter):
@@ -150,7 +150,7 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
         for key in supported:
             value = kwargs.get(key)
             if key not in self._cmd_flags:
-                LOGGER.warning("'%s' is not supported -- ommitted.", key)
+                LOG.warning("'%s' is not supported -- ommitted.", key)
                 continue
             if value:
                 args += [self._cmd_flags[key], "{}".format(str(value))]
@@ -181,8 +181,8 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
         cmd += ["-D", cwd, path]
         cmd = " ".join(cmd)
 
-        LOGGER.debug("cwd = %s", cwd)
-        LOGGER.debug("Command to execute: %s", cmd)
+        LOG.debug("cwd = %s", cwd)
+        LOG.debug("Command to execute: %s", cmd)
         p = start_process(cmd, cwd=cwd, env=env)
         output, err = p.communicate()
         retcode = p.wait()
@@ -192,11 +192,11 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
         # everything at once then that should happen here.
 
         if retcode == 0:
-            LOGGER.info("Submission returned status OK.")
+            LOG.info("Submission returned status OK.")
             jid = re.search("[0-9]+", output).group(0)
             return SubmissionRecord(SubmissionCode.OK, retcode, jid)
         else:
-            LOGGER.warning("Submission returned an error.")
+            LOG.warning("Submission returned an error.")
             return SubmissionRecord(SubmissionCode.ERROR, retcode)
 
     def check_jobs(self, joblist):
@@ -221,12 +221,12 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
 
         status = {}
         for jobid in joblist:
-            LOGGER.debug("Looking for jobid %s", jobid)
+            LOG.debug("Looking for jobid %s", jobid)
             status[jobid] = None
 
         if retcode == 0:
             for job in output.split("\n")[1:]:
-                LOGGER.debug("Job Entry: %s", job)
+                LOG.debug("Job Entry: %s", job)
                 # The squeue command output is split with the following indices
                 # used for specific information:
                 # 0 - Job Identifier
@@ -241,16 +241,16 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
                 state_index = 4
                 jobid_index = 0
                 if job_split[0] == "":
-                    LOGGER.debug("Removing blank entry from head of status.")
+                    LOG.debug("Removing blank entry from head of status.")
                     job_split = job_split[1:]
 
-                LOGGER.debug("Entry split: %s", job_split)
+                LOG.debug("Entry split: %s", job_split)
                 if not job_split:
-                    LOGGER.debug("Continuing...")
+                    LOG.debug("Continuing...")
                     continue
 
                 if job_split[jobid_index] in status:
-                    LOGGER.debug(
+                    LOG.debug(
                         "ID Found. %s -- %s",
                         job_split[state_index],
                         self._state(job_split[state_index]),
@@ -259,12 +259,12 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
 
             return JobStatusCode.OK, status
         elif retcode == 1:
-            LOGGER.warning(
+            LOG.warning(
                 "User '%s' has no jobs executing. Returning.", getpass.getuser()
             )
             return JobStatusCode.NOJOBS, status
         else:
-            LOGGER.error("Error code '%s' seen. Unexpected behavior " "encountered.")
+            LOG.error("Error code '%s' seen. Unexpected behavior " "encountered.")
             return JobStatusCode.ERROR, status
 
     def cancel_jobs(self, joblist):
@@ -286,7 +286,7 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
         if retcode == 0:
             _record = CancellationRecord(CancelCode.OK, retcode)
         else:
-            LOGGER.error("Error code '%s' seen. Unexpected behavior " "encountered.")
+            LOG.error("Error code '%s' seen. Unexpected behavior " "encountered.")
             _record = CancellationRecord(CancelCode.ERROR, retcode)
 
         return _record
@@ -298,7 +298,7 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
         :param slurm_state: String representation of scheduler job status.
         :returns: A Study.State enum corresponding to parameter job_state.
         """
-        LOGGER.debug("Received SLURM State -- %s", slurm_state)
+        LOG.debug("Received SLURM State -- %s", slurm_state)
         if slurm_state == "R":
             return State.RUNNING
         elif slurm_state == "PD":

@@ -37,7 +37,7 @@ import six
 from merlin.study.scriptadapter import ScriptAdapter
 
 
-LOGGER = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 @six.add_metaclass(ABCMeta)
@@ -136,8 +136,8 @@ class SchedulerScriptAdapter(ScriptAdapter):
         addl_args.pop("nodes")
         addl_args.pop("procs")
 
-        LOGGER.debug("nodes=%s; procs=%s", nodes, procs)
-        LOGGER.debug("step_cmd=%s", step_cmd)
+        LOG.debug("nodes=%s; procs=%s", nodes, procs)
+        LOG.debug("step_cmd=%s", step_cmd)
         # See if the command contains a launcher token in it.
         alloc_search = list(re.finditer(self.launcher_regex, step_cmd))
         if alloc_search:
@@ -146,7 +146,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
             total_procs = 0  # Total processors we've allocated so far.
             cmd = step_cmd  # The step command we'll substitute into.
             for match in alloc_search:
-                LOGGER.debug("Found a match: %s", match.group())
+                LOG.debug("Found a match: %s", match.group())
                 _nodes = None
                 _procs = None
                 # Look for the allocation information in the match.
@@ -158,7 +158,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
                     _ = _alloc.split(",")
                     _nodes = _[0]
                     _procs = _[1]
-                    LOGGER.debug(
+                    LOG.debug(
                         "Legacy setup detected. (nodes=%s, procs=%s)", _nodes, _procs
                     )
                 else:
@@ -171,7 +171,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
                             " Number of nodes and/or procs must only be "
                             "specified once.".format(step_cmd, _alloc)
                         )
-                        LOGGER.error(msg)
+                        LOG.error(msg)
                         raise ValueError(msg)
 
                     if _alloc.count("p") < 1:
@@ -181,7 +181,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
                                 step_cmd, _alloc
                             )
                         )
-                        LOGGER.error(msg)
+                        LOG.error(msg)
                         raise ValueError(msg)
 
                     _nodes = re.search(self.node_alloc, _alloc)
@@ -191,7 +191,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
                     if _procs:
                         _procs = _procs.group("procs")
 
-                    LOGGER.debug(
+                    LOG.debug(
                         "New setup detected. (nodes=%s, procs=%s)", _nodes, _procs
                     )
 
@@ -214,7 +214,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
                         )
                 # If we have constructed a message, raise an exception.
                 if msg:
-                    LOGGER.error(msg)
+                    LOG.error(msg)
                     raise ValueError(msg)
 
                 pcmd = self.get_parallelize_command(_procs, _nodes, **addl_args)
@@ -226,7 +226,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
                     "Total processors ({}) requested exceeds the "
                     "maximum requested ({})".format(total_procs, procs)
                 )
-                LOGGER.error(msg)
+                LOG.error(msg)
                 raise ValueError(msg)
 
             if total_nodes > nodes:
@@ -234,7 +234,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
                     "Total nodes ({}) requested exceeds the "
                     "maximum requested ({})".format(total_nodes, nodes)
                 )
-                LOGGER.error(msg)
+                LOG.error(msg)
                 raise ValueError(msg)
 
             return cmd
@@ -246,10 +246,10 @@ class SchedulerScriptAdapter(ScriptAdapter):
             pcmd = self.get_parallelize_command(procs, nodes, **addl_args)
             # Catch the case where the launcher token appears on its own
             if self.launcher_var in step_cmd:
-                LOGGER.debug("'%s' found in cmd -- %s", self.launcher_var, step_cmd)
+                LOG.debug("'%s' found in cmd -- %s", self.launcher_var, step_cmd)
                 return step_cmd.replace(self.launcher_var, pcmd)
             else:
-                LOGGER.debug(
+                LOG.debug(
                     "The command did not specify an MPI command. cmd=%s", step_cmd
                 )
                 return step_cmd
@@ -271,7 +271,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
         # better to be safe.
         if not step["run"]:
             msg = "Malformed StudyStep. A StudyStep requires a run entry."
-            LOGGER.error(msg)
+            LOG.error(msg)
             raise ValueError(msg)
 
         # If the user is requesting nodes, we need to request the nodes and
@@ -281,7 +281,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
         if _nodes or _procs:
             to_be_scheduled = True
             cmd = self._substitute_parallel_command(step["run"]["cmd"], **step["run"])
-            LOGGER.debug("Scheduling command: %s", cmd)
+            LOG.debug("Scheduling command: %s", cmd)
 
             # Also check for the restart command and parallelize it too.
             restart = ""
@@ -289,11 +289,11 @@ class SchedulerScriptAdapter(ScriptAdapter):
                 restart = self._substitute_parallel_command(
                     step["run"]["restart"], **step["run"]
                 )
-                LOGGER.debug("Restart command: %s", cmd)
-            LOGGER.info("Scheduling workflow step '%s'.", step.name)
+                LOG.debug("Restart command: %s", cmd)
+            LOG.info("Scheduling workflow step '%s'.", step.name)
         # Otherwise, just return the command. It doesn't need scheduling.
         else:
-            LOGGER.info("Running workflow step '%s' locally.", step.name)
+            LOG.info("Running workflow step '%s' locally.", step.name)
             to_be_scheduled = False
             cmd = step["run"]["cmd"]
             restart = step["run"]["restart"]

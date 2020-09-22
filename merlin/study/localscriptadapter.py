@@ -37,7 +37,7 @@ from merlin.study.scriptadapter import ScriptAdapter
 from merlin.utils import start_process
 
 
-LOGGER = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 class LocalScriptAdapter(ScriptAdapter):
@@ -55,7 +55,7 @@ class LocalScriptAdapter(ScriptAdapter):
 
         :param **kwargs: A dictionary with default settings for the adapter.
         """
-        LOGGER.debug("kwargs\n--------------------------\n%s", kwargs)
+        LOG.debug("kwargs\n--------------------------\n%s", kwargs)
         super(LocalScriptAdapter, self).__init__(**kwargs)
 
     def _write_script(self, ws_path, step):
@@ -132,8 +132,8 @@ class LocalScriptAdapter(ScriptAdapter):
         :param env: A dict containing a modified environment for execution.
         :returns: The return code of the submission command and job identiifer.
         """
-        LOGGER.debug("cwd = %s", cwd)
-        LOGGER.debug("Script to execute: %s", path)
+        LOG.debug("cwd = %s", cwd)
+        LOG.debug("Script to execute: %s", path)
         p = start_process(path, shell=False, cwd=cwd, env=env)
         pid = p.pid
         output, err = p.communicate()
@@ -149,10 +149,10 @@ class LocalScriptAdapter(ScriptAdapter):
             out.write(err)
 
         if retcode == 0:
-            LOGGER.info("Execution returned status OK.")
+            LOG.info("Execution returned status OK.")
             return SubmissionRecord(SubmissionCode.OK, retcode, pid)
         else:
-            LOGGER.warning("Execution returned an error: %s", str(err))
+            LOG.warning("Execution returned an error: %s", str(err))
             _record = SubmissionRecord(SubmissionCode.ERROR, retcode, pid)
             _record.add_info("stderr", str(err))
             return _record

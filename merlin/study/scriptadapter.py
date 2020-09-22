@@ -36,7 +36,7 @@ from abc import ABCMeta, abstractmethod
 import six
 
 
-LOGGER = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 @six.add_metaclass(ABCMeta)
@@ -62,7 +62,7 @@ class ScriptAdapter(object):
         :param kwargs: The key value arguments for the ScriptAdapter instance.
         """
         self._exec = kwargs.pop("shell", "/bin/bash")
-        LOGGER.debug("Shell set to '%s'.", self._exec)
+        LOG.debug("Shell set to '%s'.", self._exec)
 
     @abstractmethod
     def check_jobs(self, joblist):

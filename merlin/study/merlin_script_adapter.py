@@ -478,7 +478,7 @@ class MerlinScriptAdapter(LocalScriptAdapter):
             return _record
 
 
-class MerlinScriptAdapterFactory(object):
+class MerlinScriptAdapterFactory:
     factories = {
         "merlin-flux": MerlinFluxScriptAdapter,
         "merlin-lsf": MerlinLSFScriptAdapter,

@@ -40,7 +40,7 @@ LOG = logging.getLogger(__name__)
 
 
 @six.add_metaclass(ABCMeta)
-class ScriptAdapter(object):
+class ScriptAdapter:
     """
     Abstract class representing the interface for constructing scripts.
 

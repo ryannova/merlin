@@ -6,7 +6,7 @@ from collections import OrderedDict
 LOG = logging.getLogger(__name__)
 
 
-class Combination(object):
+class Combination:
     def __init__(self, token="$"):
         self._params = {}
         self._labels = OrderedDict()

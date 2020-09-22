@@ -384,6 +384,11 @@ class MerlinScriptAdapter(LocalScriptAdapter):
         :param env: A dict containing a modified environment for execution.
         :returns: The return code of the command and processID of the command.
         """
+        print(f"***merlinscripadapter step: {step}")
+        print(f"***merlinscripadapter path: {path}")
+        print(f"***merlinscripadapter cwd: {cwd}")
+        print(f"***merlinscripadapter job_map: {job_map}")
+        print(f"***merlinscripadapter env: {env}")
         LOG.debug("cwd = %s", cwd)
         LOG.debug("Script to execute: %s", path)
         LOG.debug("starting process %s in cwd %s called %s" % (path, cwd, step["name"]))

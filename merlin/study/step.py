@@ -38,7 +38,7 @@ import numpy as np
 
 from merlin.common.abstracts.enums import ReturnCode
 from merlin.study.enums import State, SubmissionCode
-from merlin.study.script_adapter import MerlinScriptAdapter
+from merlin.study.merlin_script_adapter import MerlinScriptAdapter
 from merlin.study.variable import Variable
 from merlin.utils import create_parentdir
 
@@ -320,7 +320,7 @@ class Step:
 
     def __init__(self, merlin_step_record):
         """
-        :param maestro_step_record: The StepRecord object.
+        :param merlin_step_record: The StepRecord object.
         """
         self.merlin_step_record = merlin_step_record
         self.restart = False
@@ -393,7 +393,7 @@ class Step:
 
     @staticmethod
     def get_task_queue_from_dict(step_dict):
-        """ given a maestro step dict, get the task queue"""
+        """ given a step dict, get the task queue"""
         with suppress(TypeError, KeyError):
             queue = step_dict["run"]["task_queue"]
             if queue is None or queue.lower() == "none":

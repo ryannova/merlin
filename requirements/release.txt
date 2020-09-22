@@ -3,7 +3,6 @@ celery[redis,sqlalchemy]>=4.4.5
 coloredlogs
 cryptography
 importlib_resources; python_version < '3.7'
-maestrowf==1.1.7dev0
 networkx
 numpy
 parse

@@ -179,7 +179,8 @@ def expand_workspace_references(basic_dag, param_dag):
                         break
                 # print(f"{workspace_name} id: {workspace_id}")
                 #print(workspace_name)
-                #print(workspace_path)
+                print("***workspace_path:")
+                print(workspace_path)
                 result_dag.values[node_name]["run"]["cmd"] = node_cmd.replace(
                     workspace_name, workspace_path
                 )
@@ -191,6 +192,15 @@ def expand_workspace_references(basic_dag, param_dag):
         # print(param_dag.values[node_name].merlin_step_record.workspace_value)
         # input()
     return result_dag
+
+def make_param_dirs(param_dag):
+    for node in param_dag:
+        if node == SOURCE_NODE:
+            continue
+        workspace_path = param_dag.values[
+            node
+        ].merlin_step_record.workspace_value
+        os.mkdir(workspace_path)
 
 def stage(study):
     # TODO
@@ -209,6 +219,9 @@ def stage(study):
     # expand paramaterized steps with param_dag
     param_dag = expand_parameterized_steps(study, basic_dag)
     #print(f"***PARAM DAG IDS={param_dag.node_ids}")
+
+    # make parameterized step directories
+    #make_param_dirs(param_dag)
 
     param_dag.display()
     #import sys

@@ -60,6 +60,7 @@ except ImportError:
 
 
 LOG = logging.getLogger(__name__)
+CELERY_ERROR = "Celery is not specified as the task server!"
 
 
 def run_task_server(study, run_mode=None):
@@ -72,7 +73,7 @@ def run_task_server(study, run_mode=None):
     if study.expanded_spec.merlin["resources"]["task_server"] == "celery":
         run_celery(study, run_mode)
     else:
-        LOG.error("Celery is not specified as the task server!")
+        LOG.error(CELERY_ERROR)
 
 
 def launch_workers(spec, steps, worker_args="", just_return_command=False):
@@ -89,7 +90,7 @@ def launch_workers(spec, steps, worker_args="", just_return_command=False):
         cproc = start_celery_workers(spec, steps, worker_args, just_return_command)
         return cproc
     else:
-        LOG.error("Celery is not specified as the task server!")
+        LOG.error(CELERY_ERROR)
 
 
 def purge_tasks(task_server, spec, force, steps):
@@ -109,7 +110,7 @@ def purge_tasks(task_server, spec, force, steps):
         # Purge tasks
         return purge_celery_tasks(queues, force)
     else:
-        LOG.error("Celery is not specified as the task server!")
+        LOG.error(CELERY_ERROR)
 
 
 def query_status(task_server, spec, steps, verbose=True):
@@ -128,7 +129,7 @@ def query_status(task_server, spec, steps, verbose=True):
         # Query the queues
         return query_celery_queues(queues)
     else:
-        LOG.error("Celery is not specified as the task server!")
+        LOG.error(CELERY_ERROR)
 
 
 def dump_status(query_return, csv_file):
@@ -165,7 +166,7 @@ def query_workers(task_server):
     if task_server == "celery":
         return query_celery_workers()
     else:
-        LOG.error("Celery is not specified as the task server!")
+        LOG.error(CELERY_ERROR)
 
 
 def get_workers(task_server):
@@ -178,7 +179,7 @@ def get_workers(task_server):
     if task_server == "celery":
         return get_workers_from_app()
     else:
-        LOG.error("Celery is not specified as the task server!")
+        LOG.error(CELERY_ERROR)
 
 
 def stop_workers(task_server, spec_worker_names, queues, workers_regex):
@@ -196,7 +197,7 @@ def stop_workers(task_server, spec_worker_names, queues, workers_regex):
         # Stop workers
         return stop_celery_workers(queues, spec_worker_names, workers_regex)
     else:
-        LOG.error("Celery is not specified as the task server!")
+        LOG.error(CELERY_ERROR)
 
 
 def route_for_task(name, args, kwargs, options, task=None, **kw):

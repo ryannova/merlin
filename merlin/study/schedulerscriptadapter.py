@@ -33,7 +33,7 @@ import logging
 import re
 import six
 
-from maestrowf.abstracts.interfaces.scriptadapter import ScriptAdapter
+from merlin.study.scriptadapter import ScriptAdapter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -270,29 +270,29 @@ class SchedulerScriptAdapter(ScriptAdapter):
         """
         # We should never get a study step that doesn't have a run entry; but
         # better to be safe.
-        if not step.run:
+        if not step["run"]:
             msg = "Malformed StudyStep. A StudyStep requires a run entry."
             LOGGER.error(msg)
             raise ValueError(msg)
 
         # If the user is requesting nodes, we need to request the nodes and
         # set up the command with scheduling.
-        _nodes = step.run.get("nodes", 0)
-        _procs = step.run.get("procs", 0)
+        _nodes = step["run"].get("nodes", 0)
+        _procs = step["run"].get("procs", 0)
         if _nodes or _procs:
             to_be_scheduled = True
             cmd = self._substitute_parallel_command(
-                step.run["cmd"],
-                **step.run
+                step["run"]["cmd"],
+                **step["run"]
             )
             LOGGER.debug("Scheduling command: %s", cmd)
 
             # Also check for the restart command and parallelize it too.
             restart = ""
-            if step.run["restart"]:
+            if step["run"]["restart"]:
                 restart = self._substitute_parallel_command(
-                    step.run["restart"],
-                    **step.run
+                    step["run"]["restart"],
+                    **step["run"]
                 )
                 LOGGER.debug("Restart command: %s", cmd)
             LOGGER.info("Scheduling workflow step '%s'.", step.name)
@@ -300,8 +300,8 @@ class SchedulerScriptAdapter(ScriptAdapter):
         else:
             LOGGER.info("Running workflow step '%s' locally.", step.name)
             to_be_scheduled = False
-            cmd = step.run["cmd"]
-            restart = step.run["restart"]
+            cmd = step["run"]["cmd"]
+            restart = step["run"]["restart"]
 
         return to_be_scheduled, cmd, restart
 

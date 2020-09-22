@@ -36,6 +36,7 @@ import logging
 import os
 import re
 import socket
+from subprocess import PIPE, Popen
 import subprocess
 from contextlib import contextmanager, suppress
 from copy import deepcopy

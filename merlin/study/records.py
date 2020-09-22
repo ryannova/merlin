@@ -26,11 +26,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ###############################################################################
-
-"""Module for interfaces that support various schedulers."""
-__path__ = __import__('pkgutil').extend_path(__path__, __name__)
-
-
 from merlin.study.record import Record
 from merlin.study.enums import CancelCode, SubmissionCode
 

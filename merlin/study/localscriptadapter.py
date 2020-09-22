@@ -34,7 +34,7 @@ import os
 from merlin.study.enums import JobStatusCode, SubmissionCode, \
     CancelCode
 from merlin.study.records import CancellationRecord, SubmissionRecord
-from merlin.study.script_adapter import ScriptAdapter
+from merlin.study.scriptadapter import ScriptAdapter
 from merlin.utils import start_process
 
 LOGGER = logging.getLogger(__name__)
@@ -74,17 +74,19 @@ class LocalScriptAdapter(ScriptAdapter):
             written script for run["cmd"], and the path to the script written
             for run["restart"] (if it exists).
         """
-        cmd = step.run["cmd"]
-        restart = step.run["restart"]
+        cmd = step["run"]["cmd"]
+        restart = None
+        if "restart" in step["run"]:
+            restart = step["run"]["restart"]
         to_be_scheduled = False
 
-        fname = "{}.sh".format(step.name)
+        fname = "{}.sh".format(step["name"])
         script_path = os.path.join(ws_path, fname)
         with open(script_path, "w") as script:
             script.write("#!{0}\n\n{1}\n".format(self._exec, cmd))
 
         if restart:
-            rname = "{}.restart.sh".format(step.name)
+            rname = "{}.restart.sh".format(step["name"])
             restart_path = os.path.join(ws_path, rname)
 
             with open(restart_path, "w") as script:
@@ -137,8 +139,8 @@ class LocalScriptAdapter(ScriptAdapter):
         output, err = p.communicate()
         retcode = p.wait()
 
-        o_path = os.path.join(cwd, "{}.out".format(step.name))
-        e_path = os.path.join(cwd, "{}.err".format(step.name))
+        o_path = os.path.join(cwd, "{}.out".format(step["name"]))
+        e_path = os.path.join(cwd, "{}.err".format(step["name"]))
 
         with open(o_path, "w") as out:
             out.write(output)

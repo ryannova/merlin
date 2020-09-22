@@ -104,7 +104,7 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
         :returns: A string of the header based on internal batch parameters and
             the parameter step.
         """
-        run = dict(step.run)
+        run = dict(step["run"])
         batch_header = dict(self._batch)
         batch_header["walltime"] = run.pop("walltime")
         if run["nodes"]:

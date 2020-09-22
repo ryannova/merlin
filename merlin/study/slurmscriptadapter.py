@@ -33,11 +33,11 @@ import logging
 import os
 import re
 
-from merlin.study.schedulerscriptadapter import SchedulerScriptAdapter
-from merlin.study.enums import JobStatusCode, State, SubmissionCode, \
-    CancelCode
+from merlin.study.enums import CancelCode, JobStatusCode, State, SubmissionCode
 from merlin.study.records import CancellationRecord, SubmissionRecord
+from merlin.study.schedulerscriptadapter import SchedulerScriptAdapter
 from merlin.utils import start_process
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -79,11 +79,10 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
             "queue": "#SBATCH -p {queue}",
             "bank": "#SBATCH -A {bank}",
             "walltime": "#SBATCH -t {walltime}",
-            "job-name":
-                "#SBATCH -J \"{job-name}\"\n"
-                "#SBATCH -o \"{job-name}.out\"\n"
-                "#SBATCH -e \"{job-name}.err\"",
-            "comment": "#SBATCH --comment \"{comment}\""
+            "job-name": '#SBATCH -J "{job-name}"\n'
+            '#SBATCH -o "{job-name}.out"\n'
+            '#SBATCH -e "{job-name}.err"',
+            "comment": '#SBATCH --comment "{comment}"',
         }
 
         self._cmd_flags = {
@@ -138,7 +137,7 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
             self._cmd_flags["cmd"],
             # Processors segment
             self._cmd_flags["ntasks"],
-            str(procs)
+            str(procs),
         ]
 
         if nodes:
@@ -154,10 +153,7 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
                 LOGGER.warning("'%s' is not supported -- ommitted.", key)
                 continue
             if value:
-                args += [
-                    self._cmd_flags[key],
-                    "{}".format(str(value))
-                ]
+                args += [self._cmd_flags[key], "{}".format(str(value))]
 
         return " ".join(args)
 
@@ -197,7 +193,7 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
 
         if retcode == 0:
             LOGGER.info("Submission returned status OK.")
-            jid = re.search('[0-9]+', output).group(0)
+            jid = re.search("[0-9]+", output).group(0)
             return SubmissionRecord(SubmissionCode.OK, retcode, jid)
         else:
             LOGGER.warning("Submission returned an error.")
@@ -254,19 +250,21 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
                     continue
 
                 if job_split[jobid_index] in status:
-                    LOGGER.debug("ID Found. %s -- %s", job_split[state_index],
-                                 self._state(job_split[state_index]))
-                    status[job_split[jobid_index]] = \
-                        self._state(job_split[state_index])
+                    LOGGER.debug(
+                        "ID Found. %s -- %s",
+                        job_split[state_index],
+                        self._state(job_split[state_index]),
+                    )
+                    status[job_split[jobid_index]] = self._state(job_split[state_index])
 
             return JobStatusCode.OK, status
         elif retcode == 1:
-            LOGGER.warning("User '%s' has no jobs executing. Returning.",
-                           getpass.getuser())
+            LOGGER.warning(
+                "User '%s' has no jobs executing. Returning.", getpass.getuser()
+            )
             return JobStatusCode.NOJOBS, status
         else:
-            LOGGER.error("Error code '%s' seen. Unexpected behavior "
-                         "encountered.")
+            LOGGER.error("Error code '%s' seen. Unexpected behavior " "encountered.")
             return JobStatusCode.ERROR, status
 
     def cancel_jobs(self, joblist):
@@ -288,8 +286,7 @@ class SlurmScriptAdapter(SchedulerScriptAdapter):
         if retcode == 0:
             _record = CancellationRecord(CancelCode.OK, retcode)
         else:
-            LOGGER.error("Error code '%s' seen. Unexpected behavior "
-                         "encountered.")
+            LOGGER.error("Error code '%s' seen. Unexpected behavior " "encountered.")
             _record = CancellationRecord(CancelCode.ERROR, retcode)
 
         return _record

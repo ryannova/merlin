@@ -28,12 +28,14 @@
 ###############################################################################
 
 """Abstract Cluster Interfaces defining the API for interacting with queues."""
-from abc import ABCMeta, abstractmethod
 import logging
 import re
+from abc import ABCMeta, abstractmethod
+
 import six
 
 from merlin.study.scriptadapter import ScriptAdapter
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,8 +55,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
     launcher_var = "$(LAUNCHER)"
     # Allocation regex and compilation
     # Keeping this one here for legacy.
-    launcher_regex = re.compile(
-        re.escape(launcher_var) + r"\[(?P<alloc>.*)\]")
+    launcher_regex = re.compile(re.escape(launcher_var) + r"\[(?P<alloc>.*)\]")
 
     # We can have multiple requested submission properties.
     # Legacy allocation of nodes and procs.
@@ -124,8 +125,10 @@ class SchedulerScriptAdapter(ScriptAdapter):
         :param procs: Total number of requested processors.
         :returns: The new command with all allocations substituted.
         """
-        err_msg = "{} attempting to allocate {} {} for a parallel call with" \
-                  " a maximum allocation of {}"
+        err_msg = (
+            "{} attempting to allocate {} {} for a parallel call with"
+            " a maximum allocation of {}"
+        )
 
         nodes = kwargs.get("nodes")
         procs = kwargs.get("procs")
@@ -139,9 +142,9 @@ class SchedulerScriptAdapter(ScriptAdapter):
         alloc_search = list(re.finditer(self.launcher_regex, step_cmd))
         if alloc_search:
             # If we find that launcher nomenclature.
-            total_nodes = 0     # Total nodes we've allocated so far.
-            total_procs = 0     # Total processors we've allocated so far.
-            cmd = step_cmd      # The step command we'll substitute into.
+            total_nodes = 0  # Total nodes we've allocated so far.
+            total_procs = 0  # Total processors we've allocated so far.
+            cmd = step_cmd  # The step command we'll substitute into.
             for match in alloc_search:
                 LOGGER.debug("Found a match: %s", match.group())
                 _nodes = None
@@ -156,26 +159,28 @@ class SchedulerScriptAdapter(ScriptAdapter):
                     _nodes = _[0]
                     _procs = _[1]
                     LOGGER.debug(
-                        "Legacy setup detected. (nodes=%s, procs=%s)",
-                        _nodes,
-                        _procs
+                        "Legacy setup detected. (nodes=%s, procs=%s)", _nodes, _procs
                     )
                 else:
                     # We're dealing with the new style.
                     # Make sure we only have at most one proc and node
                     # allocation specified.
                     if _alloc.count("p") > 1 or _alloc.count("n") > 1:
-                        msg = "cmd: {}\n Invalid allocations specified ({})." \
-                              " Number of nodes and/or procs must only be " \
-                              "specified once." \
-                              .format(step_cmd, _alloc)
+                        msg = (
+                            "cmd: {}\n Invalid allocations specified ({})."
+                            " Number of nodes and/or procs must only be "
+                            "specified once.".format(step_cmd, _alloc)
+                        )
                         LOGGER.error(msg)
                         raise ValueError(msg)
 
                     if _alloc.count("p") < 1:
-                        msg = "cmd: {}\n Invalid allocations specified ({})." \
-                              " Processors/tasks must be specified." \
-                              .format(step_cmd, _alloc)
+                        msg = (
+                            "cmd: {}\n Invalid allocations specified ({})."
+                            " Processors/tasks must be specified.".format(
+                                step_cmd, _alloc
+                            )
+                        )
                         LOGGER.error(msg)
                         raise ValueError(msg)
 
@@ -187,9 +192,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
                         _procs = _procs.group("procs")
 
                     LOGGER.debug(
-                        "New setup detected. (nodes=%s, procs=%s)",
-                        _nodes,
-                        _procs
+                        "New setup detected. (nodes=%s, procs=%s)", _nodes, _procs
                     )
 
                 msg = []
@@ -199,9 +202,7 @@ class SchedulerScriptAdapter(ScriptAdapter):
                     total_nodes += _
                     if _ > nodes:
                         msg.append(
-                            err_msg.format(
-                                match.group(), _nodes, "nodes", nodes
-                            )
+                            err_msg.format(match.group(), _nodes, "nodes", nodes)
                         )
                 # Check that the requested processors is within range.
                 if _procs:
@@ -209,30 +210,30 @@ class SchedulerScriptAdapter(ScriptAdapter):
                     total_procs += _
                     if _ > procs:
                         msg.append(
-                            err_msg.format(
-                                match.group(), _procs, "procs", procs
-                            )
+                            err_msg.format(match.group(), _procs, "procs", procs)
                         )
                 # If we have constructed a message, raise an exception.
                 if msg:
                     LOGGER.error(msg)
                     raise ValueError(msg)
 
-                pcmd = self.get_parallelize_command(
-                    _procs, _nodes, **addl_args
-                )
+                pcmd = self.get_parallelize_command(_procs, _nodes, **addl_args)
                 cmd = cmd.replace(match.group(), pcmd)
 
             # Verify that the total nodes/procs used is within maximum.
             if total_procs > procs:
-                msg = "Total processors ({}) requested exceeds the " \
-                      "maximum requested ({})".format(total_procs, procs)
+                msg = (
+                    "Total processors ({}) requested exceeds the "
+                    "maximum requested ({})".format(total_procs, procs)
+                )
                 LOGGER.error(msg)
                 raise ValueError(msg)
 
             if total_nodes > nodes:
-                msg = "Total nodes ({}) requested exceeds the " \
-                      "maximum requested ({})".format(total_nodes, nodes)
+                msg = (
+                    "Total nodes ({}) requested exceeds the "
+                    "maximum requested ({})".format(total_nodes, nodes)
+                )
                 LOGGER.error(msg)
                 raise ValueError(msg)
 
@@ -245,13 +246,11 @@ class SchedulerScriptAdapter(ScriptAdapter):
             pcmd = self.get_parallelize_command(procs, nodes, **addl_args)
             # Catch the case where the launcher token appears on its own
             if self.launcher_var in step_cmd:
-                LOGGER.debug("'%s' found in cmd -- %s",
-                             self.launcher_var, step_cmd)
+                LOGGER.debug("'%s' found in cmd -- %s", self.launcher_var, step_cmd)
                 return step_cmd.replace(self.launcher_var, pcmd)
             else:
                 LOGGER.debug(
-                    "The command did not specify an MPI command. cmd=%s",
-                    step_cmd
+                    "The command did not specify an MPI command. cmd=%s", step_cmd
                 )
                 return step_cmd
 
@@ -281,18 +280,14 @@ class SchedulerScriptAdapter(ScriptAdapter):
         _procs = step["run"].get("procs", 0)
         if _nodes or _procs:
             to_be_scheduled = True
-            cmd = self._substitute_parallel_command(
-                step["run"]["cmd"],
-                **step["run"]
-            )
+            cmd = self._substitute_parallel_command(step["run"]["cmd"], **step["run"])
             LOGGER.debug("Scheduling command: %s", cmd)
 
             # Also check for the restart command and parallelize it too.
             restart = ""
             if step["run"]["restart"]:
                 restart = self._substitute_parallel_command(
-                    step["run"]["restart"],
-                    **step["run"]
+                    step["run"]["restart"], **step["run"]
                 )
                 LOGGER.debug("Restart command: %s", cmd)
             LOGGER.info("Scheduling workflow step '%s'.", step.name)

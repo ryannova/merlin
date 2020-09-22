@@ -33,6 +33,7 @@ import logging
 
 from merlin.study.envobject import Substitution
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,7 +45,7 @@ class Variable(Substitution):
     substitution be able to inject itself into data.
     """
 
-    def __init__(self, name, value, token='$'):
+    def __init__(self, name, value, token="$"):
         """
         Initialize the Variable class.
 
@@ -63,8 +64,10 @@ class Variable(Substitution):
         self.token = token
 
         if not self._verify():
-            msg = "Variable initialized without complete settings. Set " \
-                           "required [name, value] before calling methods."
+            msg = (
+                "Variable initialized without complete settings. Set "
+                "required [name, value] before calling methods."
+            )
             logger.exception(msg)
             raise ValueError(msg)
 
@@ -83,10 +86,12 @@ class Variable(Substitution):
         :param data: String to substitute variable into.
         :returns: String with the variable's name replaced with its value.
         """
-        self._verification("Attempting to substitute a variable that is not"
-                           " complete.")
-        logger.debug("%s: %s", self.get_var(),
-                     data.replace(self.get_var(), str(self.value)))
+        self._verification(
+            "Attempting to substitute a variable that is not" " complete."
+        )
+        logger.debug(
+            "%s: %s", self.get_var(), data.replace(self.get_var(), str(self.value))
+        )
         return data.replace(self.get_var(), str(self.value))
 
     def _verify(self):

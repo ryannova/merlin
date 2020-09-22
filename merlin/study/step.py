@@ -34,12 +34,12 @@ from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime
 
-from merlin.study.enums import State, SubmissionCode
-from merlin.study.variable import Variable
 import numpy as np
 
 from merlin.common.abstracts.enums import ReturnCode
+from merlin.study.enums import State, SubmissionCode
 from merlin.study.script_adapter import MerlinScriptAdapter
+from merlin.study.variable import Variable
 from merlin.utils import create_parentdir
 
 

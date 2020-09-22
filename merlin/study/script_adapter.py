@@ -35,12 +35,11 @@ Merlin script adapter module
 import logging
 import os
 
-from merlin.study.records import SubmissionRecord
-from merlin.study.localscriptadapter import LocalScriptAdapter
-from merlin.study.slurmscriptadapter import SlurmScriptAdapter
-
-from merlin.utils import start_process
 from merlin.common.abstracts.enums import ReturnCode
+from merlin.study.localscriptadapter import LocalScriptAdapter
+from merlin.study.records import SubmissionRecord
+from merlin.study.slurmscriptadapter import SlurmScriptAdapter
+from merlin.utils import start_process
 
 
 LOG = logging.getLogger(__name__)
@@ -388,7 +387,9 @@ class MerlinScriptAdapter(LocalScriptAdapter):
         LOG.debug("cwd = %s", cwd)
         LOG.debug("Script to execute: %s", path)
         LOG.debug("starting process %s in cwd %s called %s" % (path, cwd, step["name"]))
-        submission_record = self._execute_subprocess(step["name"], path, cwd, env, False)
+        submission_record = self._execute_subprocess(
+            step["name"], path, cwd, env, False
+        )
         retcode = submission_record.return_code
         if retcode == ReturnCode.OK:
             LOG.debug("Execution returned status OK.")

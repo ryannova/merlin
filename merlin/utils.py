@@ -36,10 +36,10 @@ import logging
 import os
 import re
 import socket
-from subprocess import PIPE, Popen
 import subprocess
 from contextlib import contextmanager, suppress
 from copy import deepcopy
+from subprocess import PIPE, Popen
 from types import SimpleNamespace
 
 import numpy as np
@@ -475,6 +475,7 @@ def create_parentdir(path):
         path = os.path.expanduser(path)
         os.makedirs(path)
 
+
 def start_process(cmd, cwd=None, env=None, shell=True):
     """
     Start a new process using a specified command.
@@ -489,10 +490,10 @@ def start_process(cmd, cwd=None, env=None, shell=True):
 
     # Define kwargs for the upcoming Popen call.
     kwargs = {
-        "shell":                shell,
-        "universal_newlines":   True,
-        "stdout":               PIPE,
-        "stderr":               PIPE,
+        "shell": shell,
+        "universal_newlines": True,
+        "stdout": PIPE,
+        "stderr": PIPE,
     }
 
     # Individually check if cwd and env are set -- this prevents us from

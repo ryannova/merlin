@@ -26,8 +26,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ###############################################################################
-from merlin.study.record import Record
 from merlin.study.enums import CancelCode, SubmissionCode
+from merlin.study.record import Record
 
 
 class SubmissionRecord(Record):
@@ -94,9 +94,9 @@ class CancellationRecord(Record):
     def __init__(self, cancel_status, retcode):
         """Initialize an empty CancellationRecord."""
         self._status = {
-            CancelCode.OK:      set(),
-            CancelCode.ERROR:   set(),
-        }   # Map of cancellation status to job set.
+            CancelCode.OK: set(),
+            CancelCode.ERROR: set(),
+        }  # Map of cancellation status to job set.
         self._retcode = retcode
         self._cstatus = cancel_status
 
@@ -111,7 +111,9 @@ class CancellationRecord(Record):
         if not isinstance(cancel_status, CancelCode):
             raise TypeError(
                 "Parameter 'cancel_code' must be of type 'CancelCode'. "
-                "Received type '%s' instead.", type(cancel_status))
+                "Received type '%s' instead.",
+                type(cancel_status),
+            )
         self._status[cancel_status].add(jobid)
 
     @property

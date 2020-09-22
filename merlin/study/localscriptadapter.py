@@ -31,11 +31,11 @@
 import logging
 import os
 
-from merlin.study.enums import JobStatusCode, SubmissionCode, \
-    CancelCode
+from merlin.study.enums import CancelCode, JobStatusCode, SubmissionCode
 from merlin.study.records import CancellationRecord, SubmissionRecord
 from merlin.study.scriptadapter import ScriptAdapter
 from merlin.utils import start_process
+
 
 LOGGER = logging.getLogger(__name__)
 

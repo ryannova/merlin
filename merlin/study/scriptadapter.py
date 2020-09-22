@@ -28,11 +28,13 @@
 ###############################################################################
 
 """Abstract Script Interfaces for generating scripts."""
-from abc import ABCMeta, abstractmethod
 import logging
 import os
-import six
 import stat
+from abc import ABCMeta, abstractmethod
+
+import six
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -112,8 +114,7 @@ class ScriptAdapter(object):
             scheduled (False otherwise), path to the generate script, and path
             to the generated restart script (None if step cannot be restarted).
         """
-        to_be_scheduled, script_path, restart_path = \
-            self._write_script(ws_path, step)
+        to_be_scheduled, script_path, restart_path = self._write_script(ws_path, step)
         st = os.stat(script_path)
         os.chmod(script_path, st.st_mode | stat.S_IXUSR)
 

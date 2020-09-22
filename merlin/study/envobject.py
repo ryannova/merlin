@@ -29,11 +29,13 @@
 
 """The collection of basic classes that can be used for an environment."""
 
-from abc import ABCMeta, abstractmethod
 import logging
+from abc import ABCMeta, abstractmethod
+
 import six
 
 from merlin.study.simobject import SimObject
+
 
 logger = logging.getLogger(__name__)
 

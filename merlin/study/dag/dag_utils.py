@@ -119,7 +119,7 @@ def expand_parameterized_steps(study, basic_dag):
                 param_dag.remove_node(node_name)
                 for (param_step, param_step_name) in parameterized_steps:
                     # print(f"parameterized name: {param_step_name}")
-                    param_step.merlin_step_record.workspace_value = os.path.join(
+                    param_step.merlin_step_record.workspace.value = os.path.join(
                         study.workspace, param_step_name
                     )
                     # print(f"***Adding {node_id} id to node {param_step_name}")
@@ -187,7 +187,7 @@ def expand_workspace_references(basic_dag, param_dag):
                     ):
                         workspace_path = result_dag.values[
                             node
-                        ].merlin_step_record.workspace_value
+                        ].merlin_step_record.workspace.value
                         break
                 # print(f"{workspace_name} id: {workspace_id}")
                 # print(workspace_name)
@@ -205,12 +205,12 @@ def expand_workspace_references(basic_dag, param_dag):
     return result_dag
 
 
-def make_param_dirs(param_dag):
-    for node in param_dag:
-        if node == SOURCE_NODE:
-            continue
-        workspace_path = param_dag.values[node].merlin_step_record.workspace_value
-        os.mkdir(workspace_path)
+#def make_param_dirs(param_dag):
+#    for node in param_dag:
+#        if node == SOURCE_NODE:
+#            continue
+#        workspace_path = param_dag.values[node].merlin_step_record.workspace.value
+#        os.mkdir(workspace_path)
 
 
 def stage(study):
@@ -231,12 +231,7 @@ def stage(study):
     param_dag = expand_parameterized_steps(study, basic_dag)
     # print(f"***PARAM DAG IDS={param_dag.node_ids}")
 
-    # make parameterized step directories
-    # make_param_dirs(param_dag)
-
     param_dag.display()
-    # import sys
-    # sys.exit()
 
     # expand $(<step>.workspace) references in param_dag
     expanded_workspace_dag = expand_workspace_references(basic_dag, param_dag)
@@ -248,7 +243,5 @@ def stage(study):
     # print("\n")
 
     # expanded_workspace_dag.display()
-    # import sys
-    # sys.exit()
 
     return expanded_workspace_dag

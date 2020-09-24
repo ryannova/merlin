@@ -67,7 +67,6 @@ class MerlinStepRecord:
         tmp_dir: A provided temp directory to write scripts to instead of step
         workspace.
         """
-        # print(f"***benjstep={step}")
         self.workspace = Variable("WORKSPACE", workspace)
         # step["run"]["cmd"] = self.workspace.substitute(step["run"]["cmd"])
         # step["run"]["restart"] = self.workspace.substitute(step["run"]["restart"])
@@ -92,7 +91,6 @@ class MerlinStepRecord:
         print(self.step)
         print("***script")
         print(self.script)
-        # _StepRecord.__init__(self, workspace, step, **kwargs)
 
     def __getitem__(self, key):
         return self.step[key]
@@ -114,6 +112,7 @@ class MerlinStepRecord:
 
     def setup_workspace(self):
         """Initialize the record's workspace."""
+        print(f"*** SETUP_WORKSPACE={self.workspace.value}")
         create_parentdir(self.workspace.value)
 
     def generate_script(self, adapter, tmp_dir=""):

@@ -106,10 +106,14 @@ def check_server_access(sconf):
         for k, v in excpts.items():
             print(f"{k}: {v}")
 
+    return excpts
+
 
 def display_config_info():
     """
     Prints useful configuration information to the console.
+    Returns True if server connections are OK.
+    Returns False if an error is encountered.
     """
     print("Merlin Configuration")
     print("-" * 25)
@@ -143,7 +147,10 @@ def display_config_info():
         for k, v in excpts.items():
             print(f"{k}: {v}")
 
-    check_server_access(sconf)
+    excpts2 = check_server_access(sconf)
+    if excpts or excpts2:
+        return False
+    return True
 
 
 def display_multiple_configs(files, configs):

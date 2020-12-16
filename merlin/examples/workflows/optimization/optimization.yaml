@@ -28,11 +28,11 @@ env:
     N_DIMS: 2
     TEST_FUNCTION: "ackley"
     METHOD: 'trust-constr'
-    EMAIL_ADDRESS: "enter your email address here, or override this with --vars"
+    EMAIL_ADDRESS: "NONE"  #enter your email address here, or override this with --vars
     RUN_TYPE: "run --local"
 
     ITER: 1
-    MAX_ITER: 3
+    MAX_ITER: 2
 
     SCRIPTS: $(SPECROOT)/scripts
 
@@ -48,10 +48,10 @@ env:
 
     # pick_new_inputs step
     SEARCH_SCALE: 0.30
-    N_SAMPLES: 5 # Number of new samples per iteration around the predicted new point
-    N_EXPLOIT: 5 # Number of new samples per iteration around the current best
-    N_SAMPLES_LINE: 5 # Number between predicted best and current best
-    N_SAMPLES_START: 20 # Number to initialize
+    N_SAMPLES: 2 # Number of new samples per iteration around the predicted new point
+    N_EXPLOIT: 2 # Number of new samples per iteration around the current best
+    N_SAMPLES_LINE: 2 # Number between predicted best and current best
+    N_SAMPLES_START: 8 # Number to initialize
 
 
 study:
@@ -154,12 +154,18 @@ study:
       description: Either launches new simulations or iterated with inputs from previous step
       run:
         cmd: |-
-          cp $(optimizer.workspace)/optimization_results.json optimization_results_iter_$(ITER).json
-          cp $(visualizer.workspace)/results.png results_iter_$(ITER).png
-          echo "Done iteration $(ITER) in $(MERLIN_WORKSPACE)" | mail -s "Status $(MERLIN_WORKSPACE)" -a optimization_results_iter_$(ITER).json -a results_iter_$(ITER).png $(EMAIL_ADDRESS)
+          mv $(optimizer.workspace)/optimization_results.json optimization_results_iter_$(ITER).json
+          mv $(visualizer.workspace)/results.png results_iter_$(ITER).png
+
+          # Checking if e-mail address is present
+          if [ "$(EMAIL_ADDRESS)" = "NONE" ]; then
+              echo "Done iteration $(ITER) in $(MERLIN_WORKSPACE)"
+          else
+              echo "Done iteration $(ITER) in $(MERLIN_WORKSPACE)" | mail -s "Merlin Run Status" -a optimization_results_iter_$(ITER).json -a results_iter_$(ITER).png $(EMAIL_ADDRESS)
+          fi
 
           if [ $(ITER) -ge $(MAX_ITER) ] ; then
-              echo "done"
+              echo "Max iterations reached"
           else
               next_iter=$(ITER)
               ((next_iter=next_iter+1))

@@ -1,19 +1,31 @@
 description:
-  name: optimization
+  name: wf_optimization
   description: Design Optimization Template
+
 
 ##TODO
 # DONE Step to delete run_sim files
-# DONE: Removing the make-samples.py script
-# Ability to change the test function
-  # Need to make sure visualizer step doesn't get affected
-# Ability to change the learner
-# Ability to change optimizer
+# DONE Removing the make-samples.py script
+# DONE Emailing results from visualize step
+# DONE Adding some numerical results to png (sending the optimizer json file)
+# DONE Prepare demonstration for Thursday
+# Adding other test functions
+  # Allowing the usage of different functions from import
+# Adding learners
+  # Using merlin spellbook
+  # Pip install -e to get everything in real time
+# Clarify the inputs and outputs to each step
+# Documentation? (at least basic)
+
+##Later
+# Adding optimizers
+
 
 env:
   variables:
     EMAIL_ADDRESS: mubarka1@llnl.gov
     N_DIMS: 2
+    TEST_FUNCTION: "ackley"
     METHOD: 'trust-constr'
 
     ITER: 1
@@ -44,7 +56,7 @@ study:
       description: Run the desired simulation
       run:
         cmd: |-
-          python3 $(SCRIPTS)/test_functions.py -ID "$(ITER)/$(MERLIN_SAMPLE_ID)" -inputs $(DIM_1) $(DIM_2)
+          python3 $(SCRIPTS)/test_functions.py -function $(TEST_FUNCTION) -ID "$(ITER)/$(MERLIN_SAMPLE_ID)" -inputs $(DIM_1) $(DIM_2)
 
         cores per task: 1
         nodes: 1

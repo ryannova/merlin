@@ -1,5 +1,4 @@
 merlin
-merlin-spellbook
 numpy
 joblib
 scikit-learn

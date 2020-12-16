@@ -9,6 +9,8 @@ description:
 # DONE Emailing results from visualize step
 # DONE Adding some numerical results to png (sending the optimizer json file)
 # DONE Prepare demonstration for Thursday
+# Merge with Ben's updates
+  # Check if there is an e-mail, if not dont send e-mail
 # Adding other test functions
   # Allowing the usage of different functions from import
 # Adding learners
@@ -23,10 +25,11 @@ description:
 
 env:
   variables:
-    EMAIL_ADDRESS: mubarka1@llnl.gov
     N_DIMS: 2
     TEST_FUNCTION: "ackley"
     METHOD: 'trust-constr'
+    EMAIL_ADDRESS: "enter your email address here, or override this with --vars"
+    RUN_TYPE: "run --local"
 
     ITER: 1
     MAX_ITER: 3
@@ -161,7 +164,7 @@ study:
               next_iter=$(ITER)
               ((next_iter=next_iter+1))
               echo "Starting iteration " $next_iter
-              merlin run --local $(MERLIN_INFO)/*partial.yaml --samplesfile $(pick_new_inputs.workspace)/new_samples.npy --vars ITER=$next_iter
+              merlin $(RUN_TYPE) $(MERLIN_INFO)/*partial.yaml --samplesfile $(pick_new_inputs.workspace)/new_samples.npy --vars ITER=$next_iter
           fi
         cores per task: 1
         nodes: 1

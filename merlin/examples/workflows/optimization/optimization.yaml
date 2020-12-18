@@ -1,30 +1,23 @@
 description:
-  name: wf_optimization
+  name: $(WORKFLOW_NAME)
   description: Design Optimization Template
 
 
 ##TODO
-# DONE Step to delete run_sim files
-# DONE Removing the make-samples.py script
-# DONE Emailing results from visualize step
-# DONE Adding some numerical results to png (sending the optimizer json file)
-# DONE Prepare demonstration for Thursday
-# Merge with Ben's updates
-  # Check if there is an e-mail, if not dont send e-mail
 # Adding other test functions
   # Allowing the usage of different functions from import
 # Adding learners
   # Using merlin spellbook
-  # Pip install -e to get everything in real time
 # Clarify the inputs and outputs to each step
 # Documentation? (at least basic)
 
 ##Later
-# Adding optimizers
+# Adding other optimizers
 
 
 env:
   variables:
+    WORKFLOW_NAME: wf_optimization
     N_DIMS: 2
     TEST_FUNCTION: "ackley"
     METHOD: 'trust-constr'
@@ -161,7 +154,7 @@ study:
           if [ "$(EMAIL_ADDRESS)" = "NONE" ]; then
               echo "Done iteration $(ITER) in $(MERLIN_WORKSPACE)"
           else
-              echo "Done iteration $(ITER) in $(MERLIN_WORKSPACE)" | mail -s "Merlin Run Status" -a optimization_results_iter_$(ITER).json -a results_iter_$(ITER).png $(EMAIL_ADDRESS)
+              echo "Done iteration $(ITER) in $(MERLIN_WORKSPACE)" | mail -s "Merlin Status for $(WORKFLOW_NAME)" -a optimization_results_iter_$(ITER).json -a results_iter_$(ITER).png $(EMAIL_ADDRESS)
           fi
 
           if [ $(ITER) -ge $(MAX_ITER) ] ; then

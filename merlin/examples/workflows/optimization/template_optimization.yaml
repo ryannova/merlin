@@ -1,50 +1,41 @@
 description:
   name: $(WORKFLOW_NAME)
-  description: Design Optimization Template
-
-
-##TODO
-# Adding other test functions
-  # Allowing the usage of different functions from import
-# Adding learners
-  # Using merlin spellbook
-# Clarify the inputs and outputs to each step
-# Documentation? (at least basic)
-
-##Later
-# Adding other optimizers
+  description: |-
+   Design Optimization Template
+   To use,
+   1. Specify the first three variables here (N_DIMS, TEST_FUNCTION, DEBUG)
+   2. Run the template_config file in current directory using `python template_config.py`
+   3. Merlin run as usual (merlin run optimization.yaml)
+   * You could remove any of the specified variables and
+      replace with your own variables
 
 
 env:
   variables:
-    WORKFLOW_NAME: wf_optimization
+    # These three are necessary for template_config.py
     N_DIMS: 2
-    TEST_FUNCTION: "ackley"
+    TEST_FUNCTION: "rosen"
+    DEBUG: 0
+
+    WORKFLOW_NAME: wf_optimization
+    SCRIPTS: $(SPECROOT)/scripts
+
     METHOD: 'trust-constr'
     EMAIL_ADDRESS: "NONE"  #enter your email address here, or override this with --vars
     RUN_TYPE: "run --local"
 
     ITER: 1
-    MAX_ITER: 2
+    MAX_ITER: "{{ max_iter|default(2, true) }}"
 
-    SCRIPTS: $(SPECROOT)/scripts
-
-    DIM_1_MIN: -2.0
-    DIM_1_MAX: 2.0
-    DIM_2_MIN: -1.0
-    DIM_2_MAX: 3.0
-    DIM_1_UNCERT: 0.1
-    DIM_2_UNCERT: 0.1
-
-    BOUNDS_X: "[[$(DIM_1_MIN),$(DIM_1_MAX)],[$(DIM_2_MIN),$(DIM_2_MAX)]]"
-    UNCERTS_X: "[$(DIM_1_UNCERT),$(DIM_2_UNCERT)]"
+    BOUNDS_X: "{{ bounds_x }}"
+    UNCERTS_X: "{{ uncerts_x }}"
 
     # pick_new_inputs step
     SEARCH_SCALE: 0.30
-    N_SAMPLES: 2 # Number of new samples per iteration around the predicted new point
-    N_EXPLOIT: 2 # Number of new samples per iteration around the current best
-    N_SAMPLES_LINE: 2 # Number between predicted best and current best
-    N_SAMPLES_START: 8 # Number to initialize
+    N_SAMPLES: "{{ n_samples|default(3, true)  }}" # Number of new samples per iteration around the predicted new point
+    N_EXPLOIT: "{{ n_exploit|default(3, true)  }}" # Number of new samples per iteration around the current best
+    N_SAMPLES_LINE: "{{ n_samples_line|default(3, true)  }}" # Number between predicted best and current best
+    N_SAMPLES_START: "{{ n_samples_start|default(12, true)  }}" # Number to initialize
 
 
 study:
@@ -52,7 +43,7 @@ study:
       description: Run the desired simulation
       run:
         cmd: |-
-          python3 $(SCRIPTS)/test_functions.py -function $(TEST_FUNCTION) -ID "$(ITER)/$(MERLIN_SAMPLE_ID)" -inputs $(DIM_1) $(DIM_2)
+          python3 $(SCRIPTS)/test_functions.py -function $(TEST_FUNCTION) -ID "$(ITER)/$(MERLIN_SAMPLE_ID)" -inputs {% for column_label in column_labels %} $({{ column_label }}) {% endfor %}
 
         cores per task: 1
         nodes: 1
@@ -181,8 +172,9 @@ merlin:
         steps: [all]
   samples:
     column_labels:
-    - DIM_1
-    - DIM_2
+    {% for column_label in column_labels %}
+    - {{ column_label }}
+    {% endfor %}
     file: $(MERLIN_INFO)/samples.npy
     generate:
       cmd: |-

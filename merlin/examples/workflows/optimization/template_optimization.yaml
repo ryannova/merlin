@@ -14,8 +14,8 @@ env:
   variables:
     # These three are necessary for template_config.py
     N_DIMS: 2
-    TEST_FUNCTION: "rosen"
-    DEBUG: 0
+    TEST_FUNCTION: "ackley"
+    DEBUG: 1
 
     WORKFLOW_NAME: wf_optimization
     SCRIPTS: $(SPECROOT)/scripts

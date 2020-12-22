@@ -20,9 +20,10 @@ def get_dict_from_yaml(filename, get_template=True):
 
 def get_bounds_X(test_function):
     return {
-        'rosen': str([[-2, 2] for i in range(N_DIMS)]).replace(" ", ""),
-        'ackley': str([[-5, 5] for i in range(2)]).replace(" ", ""),
-        'rastrigin': str([[-5, 5] for i in range(2)]).replace(" ", "")
+        "rosenbrock": str([[-2, 2] for i in range(N_DIMS)]).replace(" ", ""),
+        "ackley": str([[-5, 5] for i in range(2)]).replace(" ", ""),
+        "rastrigin": str([[-5.12, 5.12] for i in range(N_DIMS)]).replace(" ", ""),
+        "griewank": str([[-10, 10] for i in range(N_DIMS)]).replace(" ", "")
     }[test_function]
 
 filename = "template_optimization.yaml"
@@ -33,6 +34,11 @@ undefined_variables = get_variables(filename)
 TEST_FUNCTION = workflow_dict["env"]["variables"]["TEST_FUNCTION"]
 DEBUG = workflow_dict["env"]["variables"]["DEBUG"]
 N_DIMS = workflow_dict["env"]["variables"]["N_DIMS"]
+
+if (TEST_FUNCTION == "ackley") and (N_DIMS != 2):
+    raise Exception(
+        "The ackley function only accepts 2 dims, change the N_DIMS variable"
+    )
 
 bounds_x = get_bounds_X(TEST_FUNCTION)
 uncerts_x = [0.1 for i in range(N_DIMS)]

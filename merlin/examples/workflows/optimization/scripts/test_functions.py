@@ -5,7 +5,7 @@ import numpy as np
 import math
 
 
-def N_Rosenbrock(X):
+def rosenbrock(X):
     X = X.T
     total = 0
     for i in range(X.shape[0] - 1):
@@ -28,13 +28,20 @@ def ackley(X):
 
   return -20.0 * np.exp(-0.2 * np.sqrt(firstSum / n)) - np.exp(secondSum / n) + 20 + np.e
 
+def griewank(X):
+    term_1 = (1. / 4000.) * sum(X ** 2)
+    term_2 = 1.0
+    for i, x in enumerate(X):
+        term_2 *= np.cos(x) / np.sqrt(i + 1)
+    return 1. + term_1 - term_2
+
 parser = argparse.ArgumentParser("Generate some samples!")
 parser.add_argument( "-function", help="Which test function do you want to use?",
-    choices=['ackley', 'rastrigin', 'rosen'],
-    default='rosen'
+    choices=["ackley", "griewank", "rastrigin", "rosenbrock"],
+    default="rosenbrock"
 )
 parser.add_argument( "-ID", help="Insert run_id here")
-parser.add_argument( "-inputs", help="Takes one input at a time", nargs='+')
+parser.add_argument( "-inputs", help="Takes one input at a time", nargs="+")
 args = parser.parse_args()
 
 run_id = args.ID
@@ -43,13 +50,7 @@ function_name = args.function
 
 inputs = np.array(inputs).astype(np.float)
 
-if function_name == "rastrigin":
-    test_function = rastrigin
-elif function_name == "ackley":
-    test_function = ackley
-else:
-    test_function = N_Rosenbrock
-
+test_function = locals()[function_name]
 outputs = test_function(inputs)
 
 results = {run_id: {"Inputs": inputs.tolist(), "Outputs": outputs.tolist()}}

@@ -49,7 +49,7 @@ optimum = np.load(optimum_path)
 old_best = np.load(old_best_path)
 
 
-def Rosenbrock_mesh():
+def rosenbrock_mesh():
     X_mesh_plot = np.array([np.linspace(-2, 2, n_points), np.linspace(-1, 3, n_points)])
     X_mesh = np.meshgrid(X_mesh_plot[0], X_mesh_plot[1])
 
@@ -61,7 +61,7 @@ def Rosenbrock_mesh():
 # Script for N_dim Rosenbrock function
 n_points = 250
 
-X_mesh, Z_mesh = Rosenbrock_mesh()
+X_mesh, Z_mesh = rosenbrock_mesh()
 
 Z_pred = surrogate.predict(np.c_[X_mesh[0].ravel(), X_mesh[1].ravel()])
 Z_pred = Z_pred.reshape(X_mesh[0].shape)

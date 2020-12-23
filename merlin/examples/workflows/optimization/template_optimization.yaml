@@ -1,41 +1,45 @@
 description:
-  name: $(WORKFLOW_NAME)
+  name: $(WORKFLOW_NAME)_ITER_$(ITER)
   description: |-
    Design Optimization Template
    To use,
    1. Specify the first three variables here (N_DIMS, TEST_FUNCTION, DEBUG)
    2. Run the template_config file in current directory using `python template_config.py`
    3. Merlin run as usual (merlin run optimization.yaml)
-   * You could remove any of the specified variables and
-      replace with your own variables
+   * MAX_ITER and the N_SAMPLES options use default values unless using DEBUG mode
+   * BOUNDS_X and UNCERTS_X are configured using the template_config.py scripts
 
 
 env:
   variables:
     # These three are necessary for template_config.py
     N_DIMS: 2
-    TEST_FUNCTION: "ackley"
-    DEBUG: 1
-
-    WORKFLOW_NAME: wf_optimization
-    SCRIPTS: $(SPECROOT)/scripts
+    TEST_FUNCTION: "rosenbrock"
+    DEBUG: 0
 
     METHOD: 'trust-constr'
     EMAIL_ADDRESS: "NONE"  #enter your email address here, or override this with --vars
     RUN_TYPE: "run --local"
 
     ITER: 1
-    MAX_ITER: "{{ max_iter|default(2, true) }}"
+    MAX_ITER: "{{ max_iter|default(2) }}"
+    PREV_TIMESTAMP: 0
+    PREV_ITER: 0
 
     BOUNDS_X: "{{ bounds_x }}"
     UNCERTS_X: "{{ uncerts_x }}"
 
     # pick_new_inputs step
     SEARCH_SCALE: 0.30
-    N_SAMPLES: "{{ n_samples|default(3, true)  }}" # Number of new samples per iteration around the predicted new point
-    N_EXPLOIT: "{{ n_exploit|default(3, true)  }}" # Number of new samples per iteration around the current best
-    N_SAMPLES_LINE: "{{ n_samples_line|default(3, true)  }}" # Number between predicted best and current best
-    N_SAMPLES_START: "{{ n_samples_start|default(12, true)  }}" # Number to initialize
+    N_SAMPLES: "{{ n_samples|default(3) }}" # Number of new samples per iteration around the predicted new point
+    N_EXPLOIT: "{{ n_exploit|default(3) }}" # Number of new samples per iteration around the current best
+    N_SAMPLES_LINE: "{{ n_samples_line|default(3) }}" # Number between predicted best and current best
+    N_SAMPLES_START: "{{ n_samples_start|default(12) }}" # Number to initialize
+
+    WORKFLOW_NAME: $(TEST_FUNCTION)_optimization
+    SCRIPTS: $(SPECROOT)/scripts
+    OUTPUT_PATH: ~/optimization_runs
+    PREV_WORKSPACE_DIR: 0
 
 
 study:
@@ -78,10 +82,9 @@ study:
       description: Train an ML model on the simulation
       run:
         cmd: |-
-          temp=1
-          if [ $(ITER) -ge "$temp" ] ; then
+          if [ $(ITER) -ge "2" ] ; then
               echo "Copying the npz file from previous iteration"
-              cp ../../../learner/all_iter_results.npz .
+              cp $(PREV_WORKSPACE_DIR)/learner/all_iter_results.npz .
           fi
 
           python3 $(SCRIPTS)/learner.py -collector_dir "$(collector.workspace)"
@@ -127,7 +130,11 @@ study:
       run:
         cmd: |-
           # Add an if statment to make sure it is rosenbrock function and 2D
-          python3 $(SCRIPTS)/visualizer.py -study_dir $(MERLIN_WORKSPACE)
+          if [ $(N_DIMS) -ne "2" ] ; then
+              echo "We don't have a way of visualizing anything other than 2D"
+          else
+              python3 $(SCRIPTS)/visualizer.py -study_dir $(MERLIN_WORKSPACE)
+          fi
         cores per task: 1
         nodes: 1
         procs: 1
@@ -154,7 +161,7 @@ study:
               next_iter=$(ITER)
               ((next_iter=next_iter+1))
               echo "Starting iteration " $next_iter
-              merlin $(RUN_TYPE) $(MERLIN_INFO)/*partial.yaml --samplesfile $(pick_new_inputs.workspace)/new_samples.npy --vars ITER=$next_iter
+              merlin $(RUN_TYPE) $(MERLIN_INFO)/*partial.yaml --samplesfile $(pick_new_inputs.workspace)/new_samples.npy --vars ITER=$next_iter PREV_TIMESTAMP=$(MERLIN_TIMESTAMP) PREV_ITER=$(ITER) PREV_WORKSPACE_DIR=$(MERLIN_WORKSPACE)
           fi
         cores per task: 1
         nodes: 1

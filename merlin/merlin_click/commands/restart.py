@@ -2,8 +2,18 @@ import click
 
 
 @click.command()
-def cli():
+@click.argument(
+    "restart_dir", type=click.Path(exists=True)
+)  # , help="Path to workflow specification yaml file")
+@click.option(
+    "--local",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Run tasks locally, without distributed workers",
+)
+def cli(restart_dir, local):
     """
-    Launch Merlin workers.
+    Restart a workflow using an existing Merlin workspace.
     """
-    print("run-workers command")
+    print(f"restart at {restart_dir}. local={local}")

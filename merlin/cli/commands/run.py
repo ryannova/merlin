@@ -1,4 +1,5 @@
 import click
+import os
 
 from merlin import router
 from merlin.cli.custom import OptionEatAll
@@ -83,7 +84,22 @@ def cli(
     """
     Queue tasks for a Merlin workflow.
     """
-    print(banner_small)
+    print("specification")
+    print(specification)
+    print("local")
+    print(local)
+    print("level")
+    print(level)
+    print("vars")
+    print(vars)
+    print("samplesfile")
+    print(samplesfile)
+    print("dry")
+    print(dry)
+    print("pgen")
+    print(pgen)
+    print("pargs")
+    print(pargs)
     variables_dict = parse_override_vars(vars)
 
     # pgen checks
@@ -92,8 +108,15 @@ def cli(
             "Cannot use the 'pargs' parameter without specifying a 'pgen'!"
         )
 
+    if samplesfile:
+        samplesfile = os.path.abspath(samplesfile)
+
+    run_type = "batch"
+    if local:
+        run_type = "local"
+
     study = MerlinStudy(
-        specification,
+        os.path.abspath(specification),
         override_vars=variables_dict,
         samples_file=samplesfile,
         dry_run=dry,
@@ -101,4 +124,4 @@ def cli(
         pgen_file=pgen,
         pargs=pargs,
     )
-    router.run_task_server(study, local)
+    router.run_task_server(study, run_type)

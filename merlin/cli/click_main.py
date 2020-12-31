@@ -1,9 +1,14 @@
 import os
+import sys
+import logging
 
 import click
 
+from merlin.cli.utils import setup_logging
+
 
 plugin_folder = os.path.join(os.path.dirname(__file__), "commands")
+LOG = logging.getLogger("merlin")
 
 
 class MyCLI(click.MultiCommand):
@@ -26,8 +31,9 @@ class MyCLI(click.MultiCommand):
         return ns["cli"]
 
 def main():
+    setup_logging(logger=LOG, log_level="INFO", colors=True) #TODO level
     cli = MyCLI(help="Merlin!")  # TODO add --level, --version
     cli()
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

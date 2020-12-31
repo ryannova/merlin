@@ -11,8 +11,6 @@ import click
 )
 def cli(task_server):
     """
-    Remove all tasks from all merlin queues (default).
-    If a user would like to purge only selected queues use:
-    --steps to give a steplist, the queues will be defined from the step list
+    List connected task server workers.
     """
     print(f"task server = {task_server}.")

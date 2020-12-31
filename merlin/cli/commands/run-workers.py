@@ -1,6 +1,6 @@
 import click
 
-from merlin.merlin_click.merlin_click import OptionEatAll
+from merlin.cli.custom import OptionEatAll
 
 
 @click.command()

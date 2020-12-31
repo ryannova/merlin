@@ -1,6 +1,6 @@
 import click
 
-from merlin.merlin_click.merlin_click import OptionEatAll
+from merlin.cli.custom import OptionEatAll
 
 
 @click.command()
@@ -22,10 +22,8 @@ from merlin.merlin_click.merlin_click import OptionEatAll
     type=click.Choice(["celery"], case_sensitive=False),
     help="Task server type.",
 )
-def cli(specification, vars, steps, worker_args):
+def cli(spec, steps, queues, workers, task_server):
     """
-    Remove all tasks from all merlin queues (default).
-    If a user would like to purge only selected queues use:
-    --steps to give a steplist, the queues will be defined from the step list
+    Attempt to stop task server workers. Defaults to all workers.
     """
     print(f"run spec at {specification}.")

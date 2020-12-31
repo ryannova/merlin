@@ -1,12 +1,12 @@
 import click
 
-from merlin.merlin_click.merlin_click import OptionEatAll
+from merlin.cli.custom import OptionEatAll
 
 
 @click.command()
 @click.argument(
     "specification", type=click.Path(exists=True)
-)  # , help="Path to workflow specification yaml file")
+)
 @click.option(
     "--local",
     is_flag=True,

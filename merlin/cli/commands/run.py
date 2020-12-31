@@ -1,11 +1,14 @@
 import click
 
+from merlin import router
 from merlin.cli.custom import OptionEatAll
+from merlin.cli.utils import parse_override_vars, banner_small
+from merlin.study.study import MerlinStudy
 
 
 @click.command()
 @click.argument(
-    "specification", type=click.Path(exists=True)
+    "specification", type=click.Path(exists=True),
 )
 @click.option(
     "--local",
@@ -53,12 +56,14 @@ from merlin.cli.custom import OptionEatAll
     "--pgen",
     type=click.Path(exists=True),
     required=False,
+    default=None,
     help="Provide a pgen file to override global.parameters.",
 )
 @click.option(
     "--pargs",
     multiple=True,
     required=False,
+    default=None,
     help="A string that represents a single argument to pass "
     "a custom parameter generation function. Reuse '--parg' "
     "to pass multiple arguments. [Use with '--pgen']",
@@ -78,4 +83,22 @@ def cli(
     """
     Queue tasks for a Merlin workflow.
     """
-    print(f"run spec at {spec_path}. local={local}, level={level}")
+    print(banner_small)
+    variables_dict = parse_override_vars(vars)
+
+    # pgen checks
+    if pargs and not pgen:
+        raise ValueError(
+            "Cannot use the 'pargs' parameter without specifying a 'pgen'!"
+        )
+
+    study = MerlinStudy(
+        specification,
+        override_vars=variables_dict,
+        samples_file=samplesfile,
+        dry_run=dry,
+        no_errors=no_errors,
+        pgen_file=pgen,
+        pargs=pargs,
+    )
+    router.run_task_server(study, local)

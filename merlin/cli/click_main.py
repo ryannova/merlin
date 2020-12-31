@@ -25,7 +25,9 @@ class MyCLI(click.MultiCommand):
             eval(code, ns, ns)
         return ns["cli"]
 
-
-if __name__ == "__main__":
+def main():
     cli = MyCLI(help="Merlin!")  # TODO add --level, --version
     cli()
+
+if __name__ == "__main__":
+    main()

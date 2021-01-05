@@ -1,5 +1,8 @@
 import click
 
+from merlin.ascii_art import banner_small
+from merlin.examples.generator import list_examples, setup_example
+
 
 @click.command()
 @click.argument("workflow", type=str)
@@ -8,4 +11,8 @@ def cli(workflow, path):
     """
     Generate an example merlin workflow. Use 'merlin example list' to see available options.
     """
-    print("example command")
+    if workflow == "list":
+        print(list_examples())
+    else:
+        print(banner_small)
+        setup_example(workflow, path)

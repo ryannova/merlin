@@ -1,7 +1,10 @@
 import click
+from types import SimpleNamespace
 
+from merlin import router
+from merlin.ascii_art import banner_small
 from merlin.cli.custom import OptionEatAll
-
+from merlin.cli.utils import get_merlin_spec_with_override
 
 @click.command()
 @click.argument(
@@ -22,10 +25,20 @@ from merlin.cli.custom import OptionEatAll
     help="The specific steps in the YAML file from which you want to purge the queues. The input is a space-separated list.",
 )
 @click.option("--worker-args", default="", help="celery worker arguments in quotes.")
-def cli(specification, vars, steps, worker_args):
+def cli(specification, force, vars, steps, worker_args):
     """
     Remove all tasks from all merlin queues (default).
     If a user would like to purge only selected queues use:
     --steps to give a steplist, the queues will be defined from the step list
     """
-    print(f"run spec at {specification}.")
+    print(banner_small)
+    args = SimpleNamespace(**{"specification": specification, "variables": vars, "steps": steps})
+    spec, _ = get_merlin_spec_with_override(args)
+    ret = router.purge_tasks(
+        spec.merlin["resources"]["task_server"],
+        spec,
+        force,
+        steps,
+    )
+
+    #LOG.info(f"Purge return = {ret} .")

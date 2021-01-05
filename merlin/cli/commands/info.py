@@ -6,4 +6,6 @@ def cli():
     """
     Display info about the merlin and the python configuration. Useful for debugging.
     """
-    print("info command")
+    from merlin import display
+    args = None
+    display.print_info(args)

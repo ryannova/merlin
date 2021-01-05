@@ -1,5 +1,8 @@
 import click
 
+from merlin import router
+from merlin.ascii_art import banner_small
+
 
 @click.command()
 @click.option(
@@ -13,4 +16,5 @@ def cli(task_server):
     """
     List connected task server workers.
     """
-    print(f"task server = {task_server}.")
+    print(banner_small)
+    router.query_workers(task_server)

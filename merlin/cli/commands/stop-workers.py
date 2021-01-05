@@ -1,11 +1,14 @@
 import click
 
+from merlin import router
+from merlin.ascii_art import banner_small
 from merlin.cli.custom import OptionEatAll
+from merlin.spec.specification import MerlinSpec
 
 
 @click.command()
-@click.argument(
-    "--spec", type=click.Path(exists=True)
+@click.option(
+    "--spec", type=click.Path(exists=True), default=None
 )
 @click.option(
     "--steps",
@@ -26,4 +29,15 @@ def cli(spec, steps, queues, workers, task_server):
     """
     Attempt to stop task server workers. Defaults to all workers.
     """
-    print(f"run spec at {specification}.")
+    print(banner_small)
+    worker_names = []
+    if spec:
+        spec = MerlinSpec.load_specification(spec)
+        worker_names = spec.get_worker_names()
+        for worker_name in worker_names:
+            if "$" in worker_name:
+                pass
+                #LOG.warning(
+                #    f"Worker '{worker_name}' is unexpanded. Target provenance spec instead?"
+                #)
+    router.stop_workers(task_server, worker_names, queues, workers)

@@ -1,15 +1,17 @@
-import click
 import os
+
+import click
 
 from merlin import router
 from merlin.cli.custom import OptionEatAll
-from merlin.cli.utils import parse_override_vars, banner_small
+from merlin.cli.utils import banner_small, parse_override_vars
 from merlin.study.study import MerlinStudy
 
 
 @click.command()
 @click.argument(
-    "specification", type=click.Path(exists=True),
+    "specification",
+    type=click.Path(exists=True),
 )
 @click.option(
     "--local",

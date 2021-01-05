@@ -1,5 +1,6 @@
-import click
 from types import SimpleNamespace
+
+import click
 
 from merlin import router
 from merlin.ascii_art import banner_small
@@ -8,9 +9,7 @@ from merlin.cli.utils import get_merlin_spec_with_override
 
 
 @click.command()
-@click.argument(
-    "specification", type=click.Path(exists=True)
-)
+@click.argument("specification", type=click.Path(exists=True))
 @click.option(
     "--steps",
     cls=OptionEatAll,
@@ -43,7 +42,15 @@ def cli(specification, vars, steps, task_server, csv):
     number of connected workers) for a workflow spec.
     """
     print(banner_small)
-    args = SimpleNamespace(**{"specification": specification, "variables": vars, "task_server": task_server, "steps": steps, "csv": csv})
+    args = SimpleNamespace(
+        **{
+            "specification": specification,
+            "variables": vars,
+            "task_server": task_server,
+            "steps": steps,
+            "csv": csv,
+        }
+    )
     spec, _ = get_merlin_spec_with_override(args)
     ret = router.query_status(task_server, spec, steps)
     for name, jobs, consumers in ret:

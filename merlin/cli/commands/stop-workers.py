@@ -7,9 +7,7 @@ from merlin.spec.specification import MerlinSpec
 
 
 @click.command()
-@click.option(
-    "--spec", type=click.Path(exists=True), default=None
-)
+@click.option("--spec", type=click.Path(exists=True), default=None)
 @click.option(
     "--steps",
     cls=OptionEatAll,
@@ -17,7 +15,9 @@ from merlin.spec.specification import MerlinSpec
     help="The specific steps in the YAML file from which you want to purge the queues. The input is a space-separated list.",
 )
 @click.option("--queues", type=str, default=None, help="specific queues to stop")
-@click.option("--workers", type=str, default=None, help="regex match for specfic workers to stop")
+@click.option(
+    "--workers", type=str, default=None, help="regex match for specfic workers to stop"
+)
 @click.option(
     "--task_server",
     required=False,
@@ -37,7 +37,7 @@ def cli(spec, steps, queues, workers, task_server):
         for worker_name in worker_names:
             if "$" in worker_name:
                 pass
-                #LOG.warning(
+                # LOG.warning(
                 #    f"Worker '{worker_name}' is unexpanded. Target provenance spec instead?"
-                #)
+                # )
     router.stop_workers(task_server, worker_names, queues, workers)

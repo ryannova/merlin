@@ -1,5 +1,7 @@
 import click
+import os
 
+from merlin import router
 from merlin.cli.custom import OptionEatAll
 
 
@@ -25,4 +27,7 @@ def cli(
     """
     Create a default merlin server config file in ~/.merlin.
     """
-    print(f"config")
+    if output_dir is None:
+        user_home = os.path.expanduser("~")
+        output_dir = os.path.join(user_home, ".merlin")
+    _ = router.create_config(task_server, output_dir, broker)

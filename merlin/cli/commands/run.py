@@ -86,22 +86,6 @@ def cli(
     """
     Queue tasks for a Merlin workflow.
     """
-    print("specification")
-    print(specification)
-    print("local")
-    print(local)
-    print("level")
-    print(level)
-    print("vars")
-    print(vars)
-    print("samplesfile")
-    print(samplesfile)
-    print("dry")
-    print(dry)
-    print("pgen")
-    print(pgen)
-    print("pargs")
-    print(pargs)
     variables_dict = parse_override_vars(vars)
 
     # pgen checks

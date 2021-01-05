@@ -1,16 +1,22 @@
-import click
 from types import SimpleNamespace
+
+import click
 
 from merlin import router
 from merlin.ascii_art import banner_small
 from merlin.cli.utils import OptionEatAll
 from merlin.cli.utils import get_merlin_spec_with_override
 
+
 @click.command()
-@click.argument(
-    "specification", type=click.Path(exists=True)
+@click.argument("specification", type=click.Path(exists=True))
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Purge the tasks without confirmation",
 )
-@click.option("-f", "--force", is_flag=True, default=False, help="Purge the tasks without confirmation")
 @click.option(
     "--vars",
     cls=OptionEatAll,
@@ -32,7 +38,9 @@ def cli(specification, force, vars, steps, worker_args):
     --steps to give a steplist, the queues will be defined from the step list
     """
     print(banner_small)
-    args = SimpleNamespace(**{"specification": specification, "variables": vars, "steps": steps})
+    args = SimpleNamespace(
+        **{"specification": specification, "variables": vars, "steps": steps}
+    )
     spec, _ = get_merlin_spec_with_override(args)
     ret = router.purge_tasks(
         spec.merlin["resources"]["task_server"],
@@ -41,4 +49,4 @@ def cli(specification, force, vars, steps, worker_args):
         steps,
     )
 
-    #LOG.info(f"Purge return = {ret} .")
+    # LOG.info(f"Purge return = {ret} .")

@@ -1,5 +1,6 @@
-import click
 from types import SimpleNamespace
+
+import click
 
 from merlin import router
 from merlin.ascii_art import banner_small
@@ -47,16 +48,22 @@ def cli(specification, vars, steps, worker_args, echo):
     """
     if not echo:
         print(banner_small)
-    args = SimpleNamespace(**{"specification": specification, "variables": vars, "steps": steps, "worker_args": worker_args, "echo": echo})
+    args = SimpleNamespace(
+        **{
+            "specification": specification,
+            "variables": vars,
+            "steps": steps,
+            "worker_args": worker_args,
+            "echo": echo,
+        }
+    )
     spec, filepath = get_merlin_spec_with_override(args)
     if not echo:
         pass
-        #LOG.info(f"Launching workers from '{filepath}'")
-    status = router.launch_workers(
-        spec, steps, worker_args, echo
-    )
+        # LOG.info(f"Launching workers from '{filepath}'")
+    status = router.launch_workers(spec, steps, worker_args, echo)
     if echo:
         print(status)
     else:
         pass
-        #LOG.debug(f"celery command: {status}")
+        # LOG.debug(f"celery command: {status}")

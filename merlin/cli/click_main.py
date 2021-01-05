@@ -1,6 +1,7 @@
+import logging
 import os
 import sys
-import logging
+import traceback
 
 import click
 
@@ -30,10 +31,20 @@ class MyCLI(click.MultiCommand):
             eval(code, ns, ns)
         return ns["cli"]
 
+
 def main():
-    setup_logging(logger=LOG, log_level="INFO", colors=True) #TODO level
+    if len(sys.argv) == 1:
+        #parser.print_help(sys.stdout) TODO print help
+        return 1
     cli = MyCLI(help="Merlin!")  # TODO add --level, --version
-    cli()
+    setup_logging(logger=LOG, log_level="INFO", colors=True)  # TODO level
+    try:
+        cli()
+    except Exception as e:
+        LOG.debug(traceback.format_exc())
+        LOG.error(str(e))
+        return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

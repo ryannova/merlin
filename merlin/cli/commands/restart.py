@@ -1,6 +1,7 @@
-import click
 import glob
 import os
+
+import click
 
 from merlin import router
 from merlin.ascii_art import banner_small

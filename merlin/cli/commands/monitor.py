@@ -1,15 +1,15 @@
-import click
 import time
 from types import SimpleNamespace
+
+import click
 
 from merlin import router
 from merlin.cli.utils import OptionEatAll
 from merlin.cli.utils import get_merlin_spec_with_override
 
+
 @click.command()
-@click.argument(
-    "specification", type=click.Path(exists=True)
-)
+@click.argument("specification", type=click.Path(exists=True))
 @click.option(
     "--vars",
     cls=OptionEatAll,
@@ -24,9 +24,8 @@ from merlin.cli.utils import get_merlin_spec_with_override
     help="The specific steps in the YAML file you want to monitor",
 )
 @click.option(
-    "--sleep",
-    type=int,
-    default=60,help="Sleep duration between checking for workers.")
+    "--sleep", type=int, default=60, help="Sleep duration between checking for workers."
+)
 @click.option(
     "--task_server",
     required=False,
@@ -39,7 +38,15 @@ def cli(specification, vars, steps, sleep, task_server):
     Check for active workers on an allocation.
     """
     print("Monitor: checking queues ...")
-    args = SimpleNamespace(**{"specification": specification, "variables": vars, "sleep": sleep, "task_server": task_server, "steps": steps})
+    args = SimpleNamespace(
+        **{
+            "specification": specification,
+            "variables": vars,
+            "sleep": sleep,
+            "task_server": task_server,
+            "steps": steps,
+        }
+    )
     spec, _ = get_merlin_spec_with_override(args)
     while router.check_merlin_status(args, spec):
         LOG.info("Monitor: found tasks in queues")

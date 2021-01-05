@@ -2,7 +2,7 @@ import click
 import os
 
 from merlin import router
-from merlin.cli.custom import OptionEatAll
+from merlin.cli.utils import OptionEatAll
 from merlin.cli.utils import parse_override_vars, banner_small
 from merlin.study.study import MerlinStudy
 

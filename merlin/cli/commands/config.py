@@ -2,7 +2,7 @@ import click
 import os
 
 from merlin import router
-from merlin.cli.custom import OptionEatAll
+from merlin.cli.utils import OptionEatAll
 
 
 @click.command()

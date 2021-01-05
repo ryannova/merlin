@@ -2,7 +2,7 @@ import click
 
 from merlin import router
 from merlin.ascii_art import banner_small
-from merlin.cli.custom import OptionEatAll
+from merlin.cli.utils import OptionEatAll
 from merlin.spec.specification import MerlinSpec
 
 

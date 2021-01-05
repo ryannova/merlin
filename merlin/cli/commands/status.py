@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 from merlin import router
 from merlin.ascii_art import banner_small
-from merlin.cli.custom import OptionEatAll
+from merlin.cli.utils import OptionEatAll
 from merlin.cli.utils import get_merlin_spec_with_override
 
 

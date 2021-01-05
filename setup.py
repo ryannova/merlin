@@ -111,8 +111,7 @@ setup(
     extras_require=extras_require(),
     entry_points={
         "console_scripts": [
-            "merlin=merlin.main:main",
-            "merlin-click=merlin.cli.click_main:main",
+            "merlin=merlin.cli.click_main:main",
             "merlin-templates=merlin.merlin_templates:main",
         ]
     },

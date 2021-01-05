@@ -4,7 +4,7 @@ import logging
 
 import click
 
-from merlin.cli.utils import setup_logging
+from merlin.log_formatter import setup_logging
 
 
 plugin_folder = os.path.join(os.path.dirname(__file__), "commands")

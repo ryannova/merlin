@@ -2,8 +2,8 @@ import click
 import os
 
 from merlin import router
-from merlin.cli.utils import OptionEatAll
-from merlin.cli.utils import parse_override_vars, banner_small
+from merlin.ascii_art import banner_small
+from merlin.cli.utils import OptionEatAll, parse_override_vars
 from merlin.study.study import MerlinStudy
 
 

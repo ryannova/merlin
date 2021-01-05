@@ -1,6 +1,10 @@
 import click
+import time
+from types import SimpleNamespace
 
+from merlin import router
 from merlin.cli.custom import OptionEatAll
+from merlin.cli.utils import get_merlin_spec_with_override
 
 @click.command()
 @click.argument(
@@ -34,4 +38,10 @@ def cli(specification, vars, steps, sleep, task_server):
     """
     Check for active workers on an allocation.
     """
-    print("monitor command")
+    print("Monitor: checking queues ...")
+    args = SimpleNamespace(**{"specification": specification, "variables": vars, "sleep": sleep, "task_server": task_server, "steps": steps})
+    spec, _ = get_merlin_spec_with_override(args)
+    while router.check_merlin_status(args, spec):
+        LOG.info("Monitor: found tasks in queues")
+        time.sleep(sleep)
+    print("Monitor: ... stop condition met")

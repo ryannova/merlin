@@ -1,6 +1,10 @@
 import click
+from types import SimpleNamespace
 
+from merlin import router
+from merlin.ascii_art import banner_small
 from merlin.cli.custom import OptionEatAll
+from merlin.cli.utils import get_merlin_spec_with_override
 
 
 @click.command()
@@ -15,16 +19,44 @@ from merlin.cli.custom import OptionEatAll
     "Example: '--vars LEARN=path/to/new_learn.py EPOCHS=3'",
 )
 @click.option(
+    "--worker-args",
+    type=str,
+    required=False,
+    default="",
+    help="celery worker arguments in quotes.",
+)
+@click.option(
+    "--echo",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Just echo the command; do not actually run it",
+)
+@click.option(
     "--steps",
     cls=OptionEatAll,
     default=["all"],
     help="The specific steps in the YAML file you want workers for",
 )
 @click.option("--worker-args", default="", help="celery worker arguments in quotes.")
-def cli(specification, vars, steps, worker_args):
+def cli(specification, vars, steps, worker_args, echo):
     """
     Run the workers associated with a Merlin YAML study
     specification. Does -not- queue tasks, just launches
     workers tied to the correct queues.
     """
-    print(f"run spec at {specification}.")
+    if not echo:
+        print(banner_small)
+    args = SimpleNamespace(**{"specification": specification, "variables": vars, "steps": steps, "worker_args": worker_args, "echo": echo})
+    spec, filepath = get_merlin_spec_with_override(args)
+    if not echo:
+        pass
+        #LOG.info(f"Launching workers from '{filepath}'")
+    status = router.launch_workers(
+        spec, steps, worker_args, echo
+    )
+    if echo:
+        print(status)
+    else:
+        pass
+        #LOG.debug(f"celery command: {status}")

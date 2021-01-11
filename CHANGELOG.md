@@ -4,11 +4,32 @@ All notable changes to Merlin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.7.8]
+
+### Fixed
+- Bug that causes step restarts to lose alternate shell specification, and
+  associated CLI `restart_shell` test.
+
+## [1.7.7]
+
+### Fixed
+- Bug that caused example workflows with a variable reference in their
+  name to be listed by `merlin example list` with variable reference notation.
+- Bug that caused `requirements.txt` files to be excluded from generated
+  `merlin example` dirs.
+- Bug that causes step restarts to lose alternate shell specification. Also added
+  CLI test for this case.
+
+### Changed
+- Default broker server password is now `jackalope-password`, since `rabbit` is
+  currently accessed by developers only.
+
+## [1.7.6]
 
 ### Added
 - The first version of an optimization workflow, which can be accessed with
   `merlin example optimization`.
+- Dev requirement library for finding dependencies (and `make reqlist` target)
 
 ### Fixed
 - Bug that caused `feature_demo` to be displayed as `$(NAME)` when listed with
@@ -17,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Improved warning and help messages about `no_errors`
 - Began integrating merlin examples with `merlin-spellbook`.
+
+### Fixed
+- Pinned to celery>5.0.3 so that `merlin purge` works again
 
 ## [1.7.5]
 

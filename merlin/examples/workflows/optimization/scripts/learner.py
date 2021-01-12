@@ -12,29 +12,16 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-collector_dir = args.collector_dir
-current_iter_npz = np.load(f"{collector_dir}/current_results.npz", allow_pickle=True)
-current_iter_data = current_iter_npz["arr_0"].item()
 
 try:
-    prev_iter_npz = np.load("all_iter_results.npz", allow_pickle=True)
-    prev_iter_data = prev_iter_npz["arr_0"].item()
-    data = dict(prev_iter_data, **current_iter_data)
+    all_iter_results = np.load("all_iter_results.npz", allow_pickle=True)
 except:
-    data = current_iter_data
+    print("Unable to load the data")
 
-X = []
-y = []
-
-for i in data.keys():
-    X.append(data[i]["Inputs"])
-    y.append(data[i]["Outputs"])
-
-X = np.array(X)
-y = np.array(y)
+X = all_iter_results["X"]
+y = all_iter_results["y"]
 
 surrogate = RandomForestRegressor(max_depth=4, random_state=0, n_estimators=100)
 surrogate.fit(X, y)
 
 dump(surrogate, "surrogate.joblib")
-np.savez("all_iter_results.npz", data)

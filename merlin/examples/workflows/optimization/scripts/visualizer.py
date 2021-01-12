@@ -2,8 +2,7 @@ import argparse
 
 import matplotlib.pyplot as plt
 import numpy as np
-from joblib import dump, load
-
+import pickle
 
 plt.style.use("seaborn-white")
 
@@ -15,7 +14,7 @@ args = parser.parse_args()
 
 study_dir = args.study_dir
 npz_path = f"{study_dir}/learner/all_iter_results.npz"
-learner_path = f"{study_dir}/learner/surrogate.joblib"
+learner_path = f"{study_dir}/learner/surrogate.pkl"
 new_samples_path = f"{study_dir}/pick_new_inputs/new_samples.npy"
 new_exploit_samples_path = f"{study_dir}/pick_new_inputs/new_exploit_samples.npy"
 new_explore_samples_path = f"{study_dir}/pick_new_inputs/new_explore_samples.npy"
@@ -25,21 +24,12 @@ new_explore_star_samples_path = (
 optimum_path = f"{study_dir}/optimizer/optimum.npy"
 old_best_path = f"{study_dir}/optimizer/old_best.npy"
 
-from_file = np.load(npz_path, allow_pickle=True)
+all_iter_results = np.load(npz_path, allow_pickle=True)
 
-data = from_file["arr_0"].item()
+existing_X = all_iter_results["X"]
+existing_y = all_iter_results["y"]
 
-X = []
-y = []
-
-for i in data.keys():
-    X.append(data[i]["Inputs"])
-    y.append(data[i]["Outputs"])
-
-existing_X = np.array(X)
-existing_y = np.array(y)
-
-surrogate = load(learner_path)
+surrogate = pickle.load(open(learner_path, "rb"))
 
 new_samples = np.load(new_samples_path)
 new_exploit_samples = np.load(new_exploit_samples_path)

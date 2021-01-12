@@ -82,12 +82,10 @@ study:
       description: Train an ML model on the simulation
       run:
         cmd: |-
-          if [ $(ITER) -ge "2" ] ; then
-              echo "Copying the npz file from previous iteration"
-              cp $(PREV_WORKSPACE_DIR)/learner/all_iter_results.npz .
-          fi
+          spellbook stack-npz all_iter_results.npz $(OUTPUT_PATH)/*/collector/*.npz
+          python3 -c "import numpy as np; all_results_npz=np.load('all_iter_results.npz');np.savez('learner.npz',X=all_results_npz['X'],y=all_results_npz['y'].ravel())"
 
-          python3 $(SCRIPTS)/learner.py -collector_dir "$(collector.workspace)"
+          spellbook learn -regressor RandomForestRegressor -infile learner.npz -outfile surrogate.pkl
 
         cores per task: 1
         nodes: 1

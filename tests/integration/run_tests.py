@@ -6,7 +6,7 @@
 #
 # LLNL-CODE-797170
 # All rights reserved.
-# This file is part of Merlin, Version: 1.7.6.
+# This file is part of Merlin, Version: 1.7.9.
 #
 # For details, see https://github.com/LLNL/merlin.
 #
@@ -495,6 +495,28 @@ def define_tests():
         "local simple_chain": (
             f"{run} {simple} --local --vars OUTPUT_PATH=./{OUTPUT_DIR}",
             ReturnCodeCond(),
+            "local",
+        ),
+        "local restart": (
+            f"{run} {dev_examples}/restart.yaml --local --vars OUTPUT_PATH=./{OUTPUT_DIR}",
+            StepFileExistsCond(
+                "final_check_for_no_hard_fails",
+                "MERLIN_FINISHED",
+                "restart",
+                OUTPUT_DIR,
+                params=False,
+            ),
+            "local",
+        ),
+        "local restart_shell": (
+            f"{run} {dev_examples}/restart_shell.yaml --local --vars OUTPUT_PATH=./{OUTPUT_DIR}",
+            StepFileExistsCond(
+                "step2",
+                "MERLIN_FINISHED",
+                "restart_shell",
+                OUTPUT_DIR,
+                params=False,
+            ),
             "local",
         ),
         "example failure": (f"merlin example failure", RegexCond("not found"), "local"),

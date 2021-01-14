@@ -4,11 +4,31 @@ All notable changes to Merlin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.7.9]
+
+### Fixed
+- Bug that caused steps to raise a fatal error (instead of soft failing) after maxing
+  out step retries. Occurred if steps were part of a chord.
+
+## [1.7.8]
+
+### Fixed
+- Bug that caused step restarts to lose alternate shell specification, and
+  associated CLI `restart_shell` test.
+
+## [1.7.7]
 
 ### Fixed
 - Bug that caused example workflows with a variable reference in their
   name to be listed by `merlin example list` with variable reference notation.
+- Bug that caused `requirements.txt` files to be excluded from generated
+  `merlin example` dirs.
+- Bug that causes step restarts to lose alternate shell specification. Also added
+  CLI test for this case.
+
+### Changed
+- Default broker server password is now `jackalope-password`, since `rabbit` is
+  currently accessed by developers only.
 
 ## [1.7.6]
 

@@ -18,6 +18,8 @@ env:
         FEATURES: $(SCRIPTS)/features.json
         TRANSLATE: $(SCRIPTS)/translator.py
         COLLECT: $(SCRIPTS)/collector.py
+        LEARN: $(SCRIPTS)/learn.py
+        PREDICT: $(SCRIPTS)/predict.py
 
 study:
     - name: hello
@@ -53,7 +55,7 @@ study:
       description: |
          train a learner on the results
       run:
-         cmd: spellbook learn -infile $(translate.workspace)/results.npz -outfile regressor.pkl
+         cmd: python3 $(LEARN) -infile $(translate.workspace)/results.npz
          depends: [translate]
          task_queue: learn_queue
 
@@ -68,7 +70,7 @@ study:
       description: |
          make a new prediction from new samples
       run:
-         cmd: spellbook predict -infile $(make_new_samples.workspace)/grid_$(N_NEW).npy -outfile prediction_$(N_NEW).npy -reg $(learn.workspace)/regressor.pkl
+         cmd: python3 $(PREDICT) -infile $(make_new_samples.workspace)/grid_$(N_NEW).npy -outfile prediction_$(N_NEW).npy -reg $(learn.workspace)/random_forest_reg.pkl
          depends: [learn, make_new_samples]
          task_queue: predict_queue
 
@@ -77,7 +79,7 @@ study:
          if learn and predict succeeded, output a dir to signal study completion
       run:
          cmd: |
-            if [[ -f $(learn.workspace)/regressor.pkl && -f $(predict.workspace)/prediction_$(N_NEW).npy ]]
+            if [[ -f $(learn.workspace)/random_forest_reg.pkl && -f $(predict.workspace)/prediction_$(N_NEW).npy ]]
             then
                 touch FINISHED
                 exit $(MERLIN_SUCCESS)
@@ -126,10 +128,8 @@ merlin:
         generate:
             cmd: |
                 cp -r $(SPECROOT)/scripts $(SCRIPTS)
-
                 spellbook make-samples -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples.npy
         # can be a file glob of numpy sample files.
         file: $(MERLIN_INFO)/samples.npy
         column_labels: [X0, X1]
         level_max_dirs: 25
-

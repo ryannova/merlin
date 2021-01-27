@@ -70,7 +70,8 @@ study:
       description: Cleans up the merlin sample paths of the run_simulation step
       run:
         cmd: |-
-          rm -rf $(run_simulation.workspace)/$(MERLIN_SAMPLE_PATH)
+          #rm -rf $(run_simulation.workspace)/$(MERLIN_SAMPLE_PATH)
+          echo "skipped"
 
         cores per task: 1
         nodes: 1
@@ -82,7 +83,12 @@ study:
       description: Train an ML model on the simulation
       run:
         cmd: |-
-          spellbook stack-npz all_iter_results.npz $(OUTPUT_PATH)/*/collector/*.npz
+          if [ $(ITER) -ge "2" ] ; then
+              echo "Copying the npz file from previous iteration"
+              spellbook stack-npz all_iter_results.npz $(OUTPUT_PATH)/*/collector/*.npz
+          else
+              cp $(collector.workspace)/current_results.npz all_iter_results.npz
+          fi
           python3 -c "import numpy as np; all_results_npz=np.load('all_iter_results.npz');np.savez('learner.npz',X=all_results_npz['X'],y=all_results_npz['y'].ravel())"
 
           spellbook learn -regressor RandomForestRegressor -infile learner.npz -outfile surrogate.pkl

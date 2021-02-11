@@ -9,7 +9,7 @@ description:
    * MAX_ITER and the N_SAMPLES options use default values unless using DEBUG mode
    * BOUNDS_X and UNCERTS_X are configured using the template_config.py scripts
 
-
+   
 env:
   variables:
     # These three are necessary for template_config.py
@@ -41,13 +41,16 @@ env:
     OUTPUT_PATH: ~/optimization_runs
     PREV_WORKSPACE_DIR: 0
 
+    SPELLBOOK_SCRIPTS: /usr/workspace/wsb/mubarka1/venvs/merlin-spellbook
+    COLLECTOR: $(SPELLBOOK_SCRIPTS)/spellbook/data_formatting/conduit/python/collector.py
+
 
 study:
     - name: run_simulation
       description: Run the desired simulation
       run:
         cmd: |-
-          python3 $(SCRIPTS)/test_functions.py -function $(TEST_FUNCTION) -ID "$(ITER)/$(MERLIN_SAMPLE_ID)" -inputs {% for column_label in column_labels %} $({{ column_label }}) {% endfor %}
+          python3 $(SCRIPTS)/test_functions.py -function $(TEST_FUNCTION) -ID "$(ITER)_$(MERLIN_SAMPLE_ID)" -inputs {% for column_label in column_labels %} $({{ column_label }}) {% endfor %}
 
         cores per task: 1
         nodes: 1
@@ -59,8 +62,6 @@ study:
       run:
         cmd: |-
           python3 $(SCRIPTS)/collector.py -sim_dirs "$(run_simulation.workspace)/$(MERLIN_GLOB_PATH)"
-
-        cores per task: 1
         nodes: 1
         procs: 1
         depends: [run_simulation_*]
@@ -135,10 +136,11 @@ study:
         cmd: |-
           # Add an if statment to make sure it is rosenbrock function and 2D
           if [ $(N_DIMS) -ne "2" ] ; then
-              echo "We don't have a way of visualizing anything other than 2D"
+              echo "We currently don't have a way of visualizing anything other than 2D"
           else
-              python3 $(SCRIPTS)/visualizer.py -study_dir $(MERLIN_WORKSPACE)
+              python3 $(SCRIPTS)/visualizer.py -study_dir $(MERLIN_WORKSPACE) -scale "$(BOUNDS_X)"
           fi
+
         cores per task: 1
         nodes: 1
         procs: 1

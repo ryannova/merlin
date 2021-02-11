@@ -3,12 +3,17 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+import ast
 
 plt.style.use("seaborn-white")
 
 parser = argparse.ArgumentParser("Learn surrogate model form simulation")
 parser.add_argument(
     "-study_dir", help="The study directory, usually '$(MERLIN_WORKSPACE)'"
+)
+parser.add_argument(
+    "-scale",
+    help="ranges to scale results in form '[(min,max),(min, max)]'",
 )
 args = parser.parse_args()
 
@@ -39,8 +44,21 @@ optimum = np.load(optimum_path)
 old_best = np.load(old_best_path)
 
 
+def process_scale(args):
+    if args.scale is not None:
+        raw = ast.literal_eval(args.scale)
+        processed = np.array(raw, dtype=float).tolist()
+        return processed
+
 def rosenbrock_mesh():
-    X_mesh_plot = np.array([np.linspace(-2, 2, n_points), np.linspace(-1, 3, n_points)])
+    scales = process_scale(args)
+    print("args.scale", args.scale)
+    print("scales", scales)
+    limits = []
+    for scale in scales:
+        limits.append((scale[0], scale[1]))
+
+    X_mesh_plot = np.array([np.linspace(limits[0][0], limits[0][1], n_points), np.linspace(limits[1][0], limits[1][1], n_points)])
     X_mesh = np.meshgrid(X_mesh_plot[0], X_mesh_plot[1])
 
     Z_mesh = (1 - X_mesh[0]) ** 2 + 100 * (X_mesh[1] - X_mesh[0] ** 2) ** 2

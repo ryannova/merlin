@@ -16,6 +16,7 @@ env:
     N_DIMS: 2
     TEST_FUNCTION: "rosenbrock"
     DEBUG: 0
+    SEED: 4321
 
     METHOD: 'trust-constr'
     EMAIL_ADDRESS: "NONE"  #enter your email address here, or override this with --vars
@@ -117,10 +118,10 @@ study:
       description: Picking new simulations to run in the next iteration
       run:
         cmd: |-
-          spellbook make-samples -dims $(N_DIMS) -x0 $(optimizer.workspace)/optimum.npy -x1 $(optimizer.workspace)/old_best.npy -n_line $(N_SAMPLES_LINE) -scale_factor $(SEARCH_SCALE) -scale "$(BOUNDS_X)" -n $(N_SAMPLES) -sample_type lhd -outfile new_explore_samples.npy --hard-bounds
-          spellbook make-samples -dims $(N_DIMS) -x0 $(optimizer.workspace)/optimum.npy -scale_factor 0.05 -scale "$(BOUNDS_X)" -sample_type star -outfile new_explore_star_samples.npy --hard-bounds
+          spellbook make-samples -dims $(N_DIMS) -x0 $(optimizer.workspace)/optimum.npy -x1 $(optimizer.workspace)/old_best.npy -n_line $(N_SAMPLES_LINE) -scale_factor $(SEARCH_SCALE) -scale "$(BOUNDS_X)" -n $(N_SAMPLES) -sample_type lhd -outfile new_explore_samples.npy -seed $(SEED) --hard-bounds
+          spellbook make-samples -dims $(N_DIMS) -x0 $(optimizer.workspace)/optimum.npy -scale_factor 0.05 -scale "$(BOUNDS_X)" -sample_type star -outfile new_explore_star_samples.npy -seed $(SEED) --hard-bounds
           # Add points near current best too
-          spellbook make-samples -dims $(N_DIMS) -x0 $(optimizer.workspace)/old_best.npy -scale_factor $(SEARCH_SCALE) -scale "$(BOUNDS_X)" -n $(N_EXPLOIT) -sample_type lhd -outfile new_exploit_samples.npy --hard-bounds
+          spellbook make-samples -dims $(N_DIMS) -x0 $(optimizer.workspace)/old_best.npy -scale_factor $(SEARCH_SCALE) -scale "$(BOUNDS_X)" -n $(N_EXPLOIT) -sample_type lhd -outfile new_exploit_samples.npy -seed $(SEED) --hard-bounds
 
           # combine them
           python3 -c "import numpy as np; np.save('new_samples.npy',np.vstack((np.load('new_explore_samples.npy'),np.load('new_exploit_samples.npy'),np.load('new_explore_star_samples.npy'))))"
@@ -192,4 +193,4 @@ merlin:
     file: $(MERLIN_INFO)/samples.npy
     generate:
       cmd: |-
-          spellbook make-samples -dims $(N_DIMS) -n $(N_SAMPLES_START) -sample_type lhs -outfile=$(MERLIN_INFO)/samples.npy -scale "$(BOUNDS_X)"
+          spellbook make-samples -dims $(N_DIMS) -n $(N_SAMPLES_START) -sample_type lhs -outfile=$(MERLIN_INFO)/samples.npy -scale "$(BOUNDS_X)" -seed $(SEED)

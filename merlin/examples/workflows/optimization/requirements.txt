@@ -1,4 +1,3 @@
-merlin
 merlin-spellbook
 numpy
 scikit-learn

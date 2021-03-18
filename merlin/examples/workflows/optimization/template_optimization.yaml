@@ -9,7 +9,7 @@ description:
    * MAX_ITER and the N_SAMPLES options use default values unless using DEBUG mode
    * BOUNDS_X and UNCERTS_X are configured using the template_config.py scripts
 
-   
+
 env:
   variables:
     # These three are necessary for template_config.py
@@ -86,7 +86,7 @@ study:
         cmd: |-
           if [ $(ITER) -ge "2" ] ; then
               echo "Copying the npz file from previous iteration"
-              spellbook stack-npz all_iter_results.npz $(OUTPUT_PATH)/*/collector/*.npz
+              spellbook stack-npz all_iter_results.npz $(PREV_WORKSPACE_DIR)/collector/*.npz
           else
               cp $(collector.workspace)/current_results.npz all_iter_results.npz
           fi

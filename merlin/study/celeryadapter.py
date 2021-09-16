@@ -6,7 +6,7 @@
 #
 # LLNL-CODE-797170
 # All rights reserved.
-# This file is part of Merlin, Version: 1.7.9.
+# This file is part of Merlin, Version: 1.8.1.
 #
 # For details, see https://github.com/LLNL/merlin.
 #
@@ -223,24 +223,9 @@ def start_celery_workers(spec, steps, celery_args, just_return_command):
     local_queues = []
 
     for worker_name, worker_val in workers.items():
-        worker_machines = get_yaml_var(worker_val, "machines", None)
-        if worker_machines:
-            LOG.debug("check machines = ", check_machines(worker_machines))
-            if not check_machines(worker_machines):
-                continue
-
-            if yenv:
-                output_path = get_yaml_var(yenv, "OUTPUT_PATH", None)
-                if output_path and not os.path.exists(output_path):
-                    hostname = socket.gethostname()
-                    LOG.error(
-                        f"The output path, {output_path}, is not accessible on this host, {hostname}"
-                    )
-            else:
-                LOG.warning(
-                    "The env:variables section does not have an OUTPUT_PATH"
-                    "specified, multi-machine checks cannot be performed."
-                )
+        skip_loop_step: bool = examine_and_log_machines(worker_val, yenv)
+        if skip_loop_step:
+            continue
 
         worker_args = get_yaml_var(worker_val, "args", celery_args)
         with suppress(KeyError):
@@ -255,38 +240,12 @@ def start_celery_workers(spec, steps, celery_args, just_return_command):
         queues = spec.make_queue_string(wsteps).split(",")
 
         # Check for missing arguments
-        parallel = batch_check_parallel(spec)
-        if parallel:
-            if "--concurrency" not in worker_args:
-                LOG.warning(
-                    "The worker arg --concurrency [1-4] is recommended "
-                    "when running parallel tasks"
-                )
-            if "--prefetch-multiplier" not in worker_args:
-                LOG.warning(
-                    "The worker arg --prefetch-multiplier 1 is "
-                    "recommended when running parallel tasks"
-                )
-            if "fair" not in worker_args:
-                LOG.warning(
-                    "The worker arg -O fair is recommended when running "
-                    "parallel tasks"
-                )
-
-        if "-n" not in worker_args:
-            nhash = ""
-            if overlap:
-                nhash = time.strftime("%Y%m%d-%H%M%S")
-            # TODO: Once flux fixes their bug, change this back to %h
-            worker_args += f" -n {worker_name}{nhash}.%%h"
-
-        if "-l" not in worker_args:
-            worker_args += f" -l {logging.getLevelName(LOG.getEffectiveLevel())}"
+        verify_args(spec, worker_args, worker_name, overlap)
 
         # Add a per worker log file (debug)
         if LOG.isEnabledFor(logging.DEBUG):
             LOG.debug("Redirecting worker output to individual log files")
-            worker_args += f" --logfile %p.%i"
+            worker_args += " --logfile %p.%i"
 
         # Get the celery command
         celery_com = launch_celery_workers(
@@ -310,12 +269,23 @@ def start_celery_workers(spec, steps, celery_args, just_return_command):
             LOG.debug(f"worker cmd={worker_cmd}")
             LOG.debug(f"env={spenv}")
 
+            if just_return_command:
+                worker_list = ""
+                print(worker_cmd)
+                continue
+
             found = []
             running_queues = []
 
-            if not just_return_command and not overlap:
-                running_queues.extend(get_running_queues())
             running_queues.extend(local_queues)
+            if not overlap:
+                running_queues.extend(get_running_queues())
+                # Cache the queues from this worker to use to test
+                # for existing queues in any subsequent workers.
+                # If overlap is True, then do not check the local queues.
+                # This will allow multiple workers to pull from the same
+                # queue.
+                local_queues.extend(queues)
 
             for q in queues:
                 if q in running_queues:
@@ -325,19 +295,6 @@ def start_celery_workers(spec, steps, celery_args, just_return_command):
                 LOG.warning(
                     f"A celery worker named '{worker_name}' is already configured/running for queue(s) = {' '.join(found)}"
                 )
-                continue
-
-            # Cache the queues from this worker to use to test
-            # for existing queues in any subsequent workers.
-            # If overlap is True, then do not check the local queues.
-            # This will allow multiple workers to pull from the same
-            # queue.
-            if not overlap:
-                local_queues.extend(queues)
-
-            if just_return_command:
-                worker_list = ""
-                print(worker_cmd)
                 continue
 
             _ = subprocess.Popen(worker_cmd, **kwargs)
@@ -350,6 +307,62 @@ def start_celery_workers(spec, steps, celery_args, just_return_command):
 
     # Return a string with the worker commands for logging
     return str(worker_list)
+
+
+def examine_and_log_machines(worker_val, yenv) -> bool:
+    """
+    Examines whether a worker should be skipped in a step of start_celery_workers(), logs errors in output path for a celery
+    worker.
+    """
+    worker_machines = get_yaml_var(worker_val, "machines", None)
+    if worker_machines:
+        LOG.debug("check machines = ", check_machines(worker_machines))
+        if not check_machines(worker_machines):
+            return True
+
+        if yenv:
+            output_path = get_yaml_var(yenv, "OUTPUT_PATH", None)
+            if output_path and not os.path.exists(output_path):
+                hostname = socket.gethostname()
+                LOG.error(
+                    f"The output path, {output_path}, is not accessible on this host, {hostname}"
+                )
+        else:
+            LOG.warning(
+                "The env:variables section does not have an OUTPUT_PATH"
+                "specified, multi-machine checks cannot be performed."
+            )
+        return False
+
+
+def verify_args(spec, worker_args, worker_name, overlap):
+    """Examines the args passed to a worker for completeness."""
+    parallel = batch_check_parallel(spec)
+    if parallel:
+        if "--concurrency" not in worker_args:
+            LOG.warning(
+                "The worker arg --concurrency [1-4] is recommended "
+                "when running parallel tasks"
+            )
+        if "--prefetch-multiplier" not in worker_args:
+            LOG.warning(
+                "The worker arg --prefetch-multiplier 1 is "
+                "recommended when running parallel tasks"
+            )
+        if "fair" not in worker_args:
+            LOG.warning(
+                "The worker arg -O fair is recommended when running parallel tasks"
+            )
+
+    if "-n" not in worker_args:
+        nhash = ""
+        if overlap:
+            nhash = time.strftime("%Y%m%d-%H%M%S")
+        # TODO: Once flux fixes their bug, change this back to %h
+        worker_args += f" -n {worker_name}{nhash}.%%h"
+
+    if "-l" not in worker_args:
+        worker_args += f" -l {logging.getLevelName(LOG.getEffectiveLevel())}"
 
 
 def launch_celery_workers(spec, steps=None, worker_args="", just_return_command=False):
@@ -386,7 +399,7 @@ def purge_celery_tasks(queues, force):
         force_com = " -f "
     purge_command = " ".join(["celery -A merlin purge", force_com, "-Q", queues])
     LOG.debug(purge_command)
-    return subprocess.call(purge_command.split())
+    return subprocess.run(purge_command, shell=True).returncode
 
 
 def stop_celery_workers(queues=None, spec_worker_names=None, worker_regex=None):

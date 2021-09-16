@@ -11,18 +11,19 @@ complete: The time the job was complete
 walltime: ? Seems to be 0.
 
 new:
-init: 
-starting: 
-shell.init: 
-shell.start: 
-complete: 
-cleanup.start: 
-cleanup.finish: 
-done: 
+init:
+starting:
+shell.init:
+shell.start:
+complete:
+cleanup.start:
+cleanup.finish:
+done:
 """
 import json
 import os
 import subprocess
+from typing import IO, Dict, Union
 
 import flux
 from flux import kvs
@@ -65,27 +66,31 @@ try:
             )
         except BaseException:
             pass
-except:
+except BaseException:
     top_dir = "job"
 
-    def get_data_dict(key):
-        kwargs = {
+    def get_data_dict(key: str) -> Dict:
+        kwargs: Dict[str, Union[str, bool, os.Environ]] = {
             "env": os.environ,
             "shell": True,
             "universal_newlines": True,
             "stdout": subprocess.PIPE,
             "stderr": subprocess.PIPE,
         }
-        flux_com = f"flux kvs get {key}"
-        p = subprocess.Popen(flux_com, **kwargs)
+        flux_com: str = f"flux kvs get {key}"
+        p: subprocess.Popen = subprocess.Popen(flux_com, **kwargs)
+        stdout: IO[str]
+        stderr: IO[str]
         stdout, stderr = p.communicate()
 
-        data = {}
-        for l in stdout.split("/n"):
-            for s in l.strip().split():
-                if "timestamp" in s:
-                    jstring = s.replace("'", '"')
-                    d = json.loads(jstring)
+        data: Dict = {}
+        line: str
+        for line in stdout.split("/n"):
+            token: str
+            for token in line.strip().split():
+                if "timestamp" in token:
+                    jstring: str = token.replace("'", '"')
+                    d: Dict = json.loads(jstring)
                     data[d["name"]] = d["timestamp"]
 
         return data

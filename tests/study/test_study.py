@@ -6,8 +6,6 @@ import shutil
 import tempfile
 import unittest
 
-import pytest
-
 from merlin.study.step import Step
 from merlin.study.study import MerlinStudy
 
@@ -150,7 +148,6 @@ merlin:
 """
 
 
-# TODO many of these more resemble integration tests than unit tests, may want to review unit tests to make it more granular.
 def test_get_task_queue_default():
     """
     Given a steps dictionary that sets the task queue to `test_queue` return
@@ -158,7 +155,7 @@ def test_get_task_queue_default():
     """
     steps = {"run": {"task_queue": "test_queue"}}
     queue = Step.get_task_queue_from_dict(steps)
-    assert queue == "[merlin]_test_queue"
+    assert queue == "test_queue"
 
 
 def test_get_task_queue_task_queue_missing():
@@ -168,7 +165,7 @@ def test_get_task_queue_task_queue_missing():
     """
     steps = {"run": {}}
     queue = Step.get_task_queue_from_dict(steps)
-    assert queue == "[merlin]_"
+    assert queue == "merlin"
 
 
 def test_get_task_queue_run_missing():
@@ -177,7 +174,7 @@ def test_get_task_queue_run_missing():
     """
     steps = {}
     queue = Step.get_task_queue_from_dict(steps)
-    assert queue == "[merlin]_"
+    assert queue == "merlin"
 
 
 def test_get_task_queue_steps_None():
@@ -186,7 +183,7 @@ def test_get_task_queue_steps_None():
     """
     steps = None
     queue = Step.get_task_queue_from_dict(steps)
-    assert queue == "[merlin]_"
+    assert queue == "merlin"
 
 
 def test_get_task_queue_run_None():
@@ -196,7 +193,7 @@ def test_get_task_queue_run_None():
     """
     steps = {"run": None}
     queue = Step.get_task_queue_from_dict(steps)
-    assert queue == "[merlin]_"
+    assert queue == "merlin"
 
 
 def test_get_task_queue_None():
@@ -206,7 +203,7 @@ def test_get_task_queue_None():
     """
     steps = {"run": {"task_queue": None}}
     queue = Step.get_task_queue_from_dict(steps)
-    assert queue == "[merlin]_"
+    assert queue == "merlin"
 
 
 def test_mastro_task_queue_None_str():
@@ -216,7 +213,7 @@ def test_mastro_task_queue_None_str():
     """
     steps = {"run": {"task_queue": "None"}}
     queue = Step.get_task_queue_from_dict(steps)
-    assert queue == "[merlin]_"
+    assert queue == "merlin"
 
 
 def test_get_task_queue_none_str():
@@ -226,7 +223,7 @@ def test_get_task_queue_none_str():
     """
     steps = {"run": {"task_queue": "none"}}
     queue = Step.get_task_queue_from_dict(steps)
-    assert queue == "[merlin]_"
+    assert queue == "merlin"
 
 
 class TestMerlinStudy(unittest.TestCase):
@@ -280,36 +277,27 @@ class TestMerlinStudy(unittest.TestCase):
         If there is a common key between Maestro's global.parameters and
         Merlin's sample/column_labels, an error should be raised.
         """
-        merlin_spec_conflict: str = os.path.join(
-            self.tmpdir, "basic_ensemble_conflict.yaml"
-        )
+        merlin_spec_conflict = os.path.join(self.tmpdir, "basic_ensemble_conflict.yaml")
         with open(merlin_spec_conflict, "w+") as _file:
             _file.write(MERLIN_SPEC_CONFLICT)
-        # for some reason flake8 doesn't believe variables instantiated inside the try/with context are assigned
-        with pytest.raises(ValueError):
-            study_conflict: MerlinStudy = MerlinStudy(merlin_spec_conflict)
-            assert (
-                not study_conflict
-            ), "study_conflict completed construction without raising a ValueError."
+        try:
+            study_conflict = MerlinStudy(merlin_spec_conflict)
+        except ValueError:
+            pass
+        else:
+            assert False
 
-    # TODO the pertinent attribute for study_no_env should be examined and asserted to be empty
     def test_no_env(self):
         """
         A MerlinStudy should be able to support a MerlinSpec that does not contain
         the optional `env` section.
         """
-        merlin_spec_no_env_filepath: str = os.path.join(
+        merlin_spec_no_env_filepath = os.path.join(
             self.tmpdir, "basic_ensemble_no_env.yaml"
         )
         with open(merlin_spec_no_env_filepath, "w+") as _file:
             _file.write(MERLIN_SPEC_NO_ENV)
         try:
-            study_no_env: MerlinStudy = MerlinStudy(merlin_spec_no_env_filepath)
-            bad_type_err: str = (
-                f"study_no_env failed construction, is type {type(study_no_env)}."
-            )
-            assert isinstance(study_no_env, MerlinStudy), bad_type_err
+            study_no_env = MerlinStudy(merlin_spec_no_env_filepath)
         except Exception as e:
-            assert (
-                False
-            ), f"Encountered unexpected exception, {e}, for viable MerlinSpec without optional 'env' section."
+            assert False

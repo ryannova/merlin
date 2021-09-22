@@ -6,7 +6,7 @@
 #
 # LLNL-CODE-797170
 # All rights reserved.
-# This file is part of Merlin, Version: 1.8.1.
+# This file is part of Merlin, Version: 1.7.9.
 #
 # For details, see https://github.com/LLNL/merlin.
 #
@@ -44,9 +44,8 @@ def readme():
 
 
 # The reqs code from celery setup.py
-def _strip_comments(line: str):
-    """Removes comments from a line passed in from _reqs()."""
-    return line.split("#", 1)[0].strip()
+def _strip_comments(l):
+    return l.split("#", 1)[0].strip()
 
 
 def _pip_requirement(req):
@@ -60,8 +59,8 @@ def _reqs(*f):
     return [
         _pip_requirement(r)
         for r in (
-            _strip_comments(line)
-            for line in open(os.path.join(os.getcwd(), "requirements", *f)).readlines()
+            _strip_comments(l)
+            for l in open(os.path.join(os.getcwd(), "requirements", *f)).readlines()
         )
         if r
     ]

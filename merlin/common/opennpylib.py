@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 ###############################################################################
 # Copyright (c) 2019, Lawrence Livermore National Security, LLC.
 # Produced at the Lawrence Livermore National Laboratory
@@ -8,7 +6,7 @@
 #
 # LLNL-CODE-797170
 # All rights reserved.
-# This file is part of Merlin, Version: 1.8.1.
+# This file is part of Merlin, Version: 1.7.9.
 #
 # For details, see https://github.com/LLNL/merlin.
 #
@@ -29,6 +27,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ###############################################################################
+
+#!/usr/bin/env python
 
 """
 smallnpylib
@@ -81,7 +81,6 @@ access among all of them.
      print a.dtype      # dtype of array
 
 """
-from typing import List, Tuple
 
 import numpy as np
 
@@ -281,25 +280,16 @@ class OpenNPY:
 
 
 class OpenNPYList:
-    def __init__(self, filename_strs: List[str]):
-        self.filenames: List[str] = filename_strs
-        self.files: List[OpenNPY] = [OpenNPY(file_str) for file_str in self.filenames]
-        i: OpenNPY
+    def __init__(self, l):
+        self.filenames = l
+        self.files = [OpenNPY(_) for _ in self.filenames]
         for i in self.files:
             i.load_header()
-        self.shapes: List[Tuple[int]] = [
-            openNPY_obj.hdr["shape"] for openNPY_obj in self.files
-        ]
-        k: Tuple[int]
-        for k in self.shapes[1:]:
+        self.shapes = [_.hdr["shape"] for _ in self.files]
+        for i in self.shapes[1:]:
             # Match subsequent axes shapes.
-            if k[1:] != self.shapes[0][1:]:
-                raise AttributeError(
-                    f"Mismatch in subsequent axes shapes: {k[1:]} != {self.shapes[0][1:]}"
-                )
-        self.tells: np.ndarray = np.cumsum(
-            [arr_shape[0] for arr_shape in self.shapes]
-        )  # Tell locations.
+            assert i[1:] == self.shapes[0][1:]
+        self.tells = np.cumsum([_[0] for _ in self.shapes])  # Tell locations.
         self.tells = np.hstack(([0], self.tells))
 
     def close(self):
@@ -356,9 +346,9 @@ __all__ = [
 ]
 
 if __name__ == "__main__":
+    import unittest
     import os
     import sys
-    import unittest
     import uuid
 
     if "-h" in sys.argv:

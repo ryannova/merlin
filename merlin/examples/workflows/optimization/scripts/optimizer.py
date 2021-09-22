@@ -3,7 +3,7 @@ import ast
 import json
 
 import numpy as np
-from joblib import load
+import pickle
 from scipy.optimize import minimize
 from scipy.stats import multivariate_normal
 
@@ -26,7 +26,7 @@ args = parser.parse_args()
 method = args.method
 learner_dir = args.learner_dir
 
-surrogate = pickle.load(open(f"{learner_dir}/surrogate.pkl", "rb"))
+surrogate = pickle.load(open(f"{learner_dir}/surrogate.pkl", 'rb'))
 all_iter_results = np.load(f"{learner_dir}/all_iter_results.npz", allow_pickle=True)
 
 existing_X = all_iter_results["X"]

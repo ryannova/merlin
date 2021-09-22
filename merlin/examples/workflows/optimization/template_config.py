@@ -1,6 +1,5 @@
-import yaml
 from jinja2 import Environment, FileSystemLoader, meta
-
+import yaml
 
 # get all variable in template file
 def get_variables(filename):
@@ -9,7 +8,6 @@ def get_variables(filename):
     parsed_content = env.parse(template_source)
 
     return meta.find_undeclared_variables(parsed_content)
-
 
 def get_dict_from_yaml(filename, get_template=True):
     env = Environment(loader=FileSystemLoader("./"))
@@ -20,15 +18,13 @@ def get_dict_from_yaml(filename, get_template=True):
         return yaml.safe_load(outputText), template
     return yaml.safe_load(outputText)
 
-
 def get_bounds_X(test_function):
     return {
         "rosenbrock": str([[-2, 2] for i in range(N_DIMS)]).replace(" ", ""),
         "ackley": str([[-5, 5] for i in range(2)]).replace(" ", ""),
         "rastrigin": str([[-5.12, 5.12] for i in range(N_DIMS)]).replace(" ", ""),
-        "griewank": str([[-10, 10] for i in range(N_DIMS)]).replace(" ", ""),
+        "griewank": str([[-10, 10] for i in range(N_DIMS)]).replace(" ", "")
     }[test_function]
-
 
 filename = "template_optimization.yaml"
 

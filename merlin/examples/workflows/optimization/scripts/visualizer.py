@@ -2,8 +2,8 @@ import argparse
 
 import matplotlib.pyplot as plt
 import numpy as np
-from joblib import load
-
+import pickle
+import ast
 
 plt.style.use("seaborn-white")
 
@@ -50,7 +50,6 @@ def process_scale(args):
         processed = np.array(raw, dtype=float).tolist()
         return processed
 
-
 def rosenbrock_mesh():
     scales = process_scale(args)
     print("args.scale", args.scale)
@@ -59,12 +58,7 @@ def rosenbrock_mesh():
     for scale in scales:
         limits.append((scale[0], scale[1]))
 
-    X_mesh_plot = np.array(
-        [
-            np.linspace(limits[0][0], limits[0][1], n_points),
-            np.linspace(limits[1][0], limits[1][1], n_points),
-        ]
-    )
+    X_mesh_plot = np.array([np.linspace(limits[0][0], limits[0][1], n_points), np.linspace(limits[1][0], limits[1][1], n_points)])
     X_mesh = np.meshgrid(X_mesh_plot[0], X_mesh_plot[1])
 
     Z_mesh = (1 - X_mesh[0]) ** 2 + 100 * (X_mesh[1] - X_mesh[0] ** 2) ** 2
